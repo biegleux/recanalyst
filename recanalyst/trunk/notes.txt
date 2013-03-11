@@ -1,0 +1,2 @@
+Comment initialization and finalization block in GDIOBJ.pas.
+See Remarks at http://msdn.microsoft.com/en-us/library/windows/desktop/ms534077%28v=vs.85%29.aspx
