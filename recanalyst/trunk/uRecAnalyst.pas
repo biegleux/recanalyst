@@ -33,7 +33,8 @@ unit uRecAnalyst;
 interface
 
 uses
-  Classes, Windows, SysUtils, Contnrs, uRecAnalystBase, uRecAnalystConsts, MemStream;
+  Classes, Windows, SysUtils, Contnrs, uRecAnalystBase, uRecAnalystConsts,
+  MemStream;
 
 type
   TBuildingList = class;
@@ -335,10 +336,10 @@ type
     {$ENDIF}
     class function ErrorCodeToString(const ErrorCode: Integer): String;
     property AnalyzeTime: Integer read FAnalyzeTime;
-    property IsAOK: Boolean read FIsMgl;
-    property IsAOC: Boolean read FIsMgx;
     property Analyzed: Boolean read FAnalyzed;
-    {$IFDEF EXTENDED}property KeepStreams: Boolean read FKeepStreams write FKeepStreams;{$ENDIF}
+    {$IFDEF EXTENDED}
+    property KeepStreams: Boolean read FKeepStreams write FKeepStreams;
+    {$ENDIF}
   end;
 
 { RecAnalyst Error Codes }
@@ -391,7 +392,8 @@ resourcestring
   c_resigned = '%s resigned';
 
 const
-  ErrorMessages: array[{$IFDEF EXTENDED}RECANALYST_COMP{$ELSE}RECANALYST_READPLAYER{$ENDIF}..RECANALYST_OK] of String = (
+  ErrorMessages: array[{$IFDEF EXTENDED}RECANALYST_COMP{$ELSE}
+    RECANALYST_READPLAYER{$ENDIF}..RECANALYST_OK] of String = (
     {$IFDEF EXTENDED}
     c_cannotcompress,
     c_cannotcreatefile,
@@ -863,43 +865,20 @@ end;
 
 constructor TRecAnalyst.Create;
 begin
-  with Self do
-  begin
-    FIsMgl := False;
-    FIsMgx := False;
-    FIsMgz := False;
-    FHeaderStream := TMemStream.Create;
-    FBodyStream := TMemStream.Create;
-    FMapWidth := 0;
-    FMapHeight := 0;
-    FileName := '';
-    FMapData := nil;
-    GameSettings := TGameSettings.Create;
-    Players := TPlayerList.Create;
-    Teams := TTeamList.Create;
-
-    PreGameChatMessages := TObjectList.Create;
-    InGameChatMessages := TObjectList.Create;
-    Tributes := TObjectList.Create;
-    FAnalyzeTime := 0;
-    Researches := TObjectList.Create;
-    Units := TTrainedUnitList.Create;
-
-    FAnalyzed := False;
-
-    GaiaObjects := TObjectList.Create;
-    PlayerObjects := TObjectList.Create;
-    FMapImage := TMemoryStream.Create;
-    FMapImageSize.cx := 0;
-    FMapImageSize.cy := 0;
-    header_len := 0;
-    next_pos := 0;
-    {$IFDEF EXTENDED}
-    FKeepStreams := False;
-    objectives_pos := 0;
-    CommentString := '';
-    {$ENDIF}
-  end;
+  FHeaderStream := TMemStream.Create;
+  FBodyStream := TMemStream.Create;
+  GameSettings := TGameSettings.Create;
+  Players := TPlayerList.Create;
+  Teams := TTeamList.Create;
+  PreGameChatMessages := TObjectList.Create;
+  InGameChatMessages := TObjectList.Create;
+  Tributes := TObjectList.Create;
+  Researches := TObjectList.Create;
+  Units := TTrainedUnitList.Create;
+  GaiaObjects := TObjectList.Create;
+  PlayerObjects := TObjectList.Create;
+  FMapImage := TMemoryStream.Create;
+  Reset;
 end;
 
 destructor TRecAnalyst.Destroy;
