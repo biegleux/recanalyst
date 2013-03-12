@@ -148,6 +148,7 @@ type
     function GetGameSpeed: AnsiString;
     function GetRevealMap: AnsiString;
     function GetMapSize: AnsiString;
+    function GetGameVersion: AnsiString;
     function GetIsScenario: Boolean;
   public
     GameType: TGameType;
@@ -169,6 +170,7 @@ type
     IsFFA: Boolean;
     Owner: TPlayer;
     ScFileName: AnsiString;
+    GameVersion: TGameVersion;
     Victory: TVictory;
     constructor Create;
     destructor Destroy; override;
@@ -179,6 +181,7 @@ type
     property sGameSpeed: AnsiString read GetGameSpeed;
     property sRevealMap: AnsiString read GetRevealMap;
     property sMapSize: AnsiString read GetMapSize;
+    property sGameVersion: AnsiString read GetGameVersion;
     property IsScenario: Boolean read GetIsScenario;
   end;
 
@@ -292,8 +295,6 @@ type
     FMapHeight: Longint;
     FAnalyzeTime: Integer;
 
-    FGameVersion: TGameVersion;
-
     GaiaObjects: TObjectList;
     PlayerObjects: TObjectList;
     FAnalyzed: Boolean;
@@ -309,7 +310,6 @@ type
     function AnalyzeHeader: Boolean;
     function AnalyzeBody: Boolean;
     procedure PostAnalyze;
-    function GetGameVersion: AnsiString;
     procedure ReadPlayerInfoBlock(const num_player: Byte);
   public
     FileName: String;
@@ -335,8 +335,6 @@ type
     {$ENDIF}
     class function ErrorCodeToString(const ErrorCode: Integer): String;
     property AnalyzeTime: Integer read FAnalyzeTime;
-    property GameVersion: TGameVersion read FGameVersion;
-    property sGameVersion: AnsiString read GetGameVersion;
     property IsAOK: Boolean read FIsMgl;
     property IsAOC: Boolean read FIsMgx;
     property Analyzed: Boolean read FAnalyzed;
@@ -781,6 +779,7 @@ begin
   GameSpeed := Low(TGameSpeed);
   RevealMap := Low(TRevealMap);
   MapSize := Low(TMapSize);
+  GameVersion := Low(TGameVersion);
 
   MapId := 0;
   PopLimit := 0;
@@ -841,6 +840,14 @@ begin
     Result := MAP_SIZES[MapSize];
 end;
 
+function TGameSettings.GetGameVersion: AnsiString;
+begin
+  Result := '';
+  if not (GameVersion in [Low(GAME_VERSIONS)..High(GAME_VERSIONS)]) then
+    Exit;
+  Result := GAME_VERSIONS[GameVersion];
+end;
+
 function TGameSettings.GetIsScenario: Boolean;
 begin
   Result := (GameType = gtScenario);
@@ -875,7 +882,6 @@ begin
     InGameChatMessages := TObjectList.Create;
     Tributes := TObjectList.Create;
     FAnalyzeTime := 0;
-    FGameVersion := gvUnknown;
     Researches := TObjectList.Create;
     Units := TTrainedUnitList.Create;
 
@@ -977,7 +983,6 @@ begin
       if (header_len = 0) then
         raise ERecAnalystException.Create(c_headerlenempty, RECANALYST_EMPTYHEADER);
 
-      { skip next_pos }
       if FIsMgx then
         ms.Read(next_pos, SizeOf(next_pos));
 
@@ -1079,21 +1084,21 @@ begin
     if (version = VER_94) then
     begin
       if FIsMgz then
-        FGameVersion := gvAOC11
+        GameSettings.GameVersion := gvAOC11
       else
-        FGameVersion := gvAOC;
+        GameSettings.GameVersion := gvAOC;
     end else if (version = VER_93) then
-      FGameVersion := gvAOK
+      GameSettings.GameVersion := gvAOK
     else if (version = TRL_93) and FIsMgx then
-      FGameVersion := gvAOCTrial
+      GameSettings.GameVersion := gvAOCTrial
     else if (version = TRL_93) and FIsMgl then
-      FGameVersion := gvAOKTrial
+      GameSettings.GameVersion := gvAOKTrial
     else if (version = VER_95) then
-      FGameVersion := gvAOC21
+      GameSettings.GameVersion := gvAOC21
     else
-      FGameVersion := gvUnknown;
+      GameSettings.GameVersion := gvUnknown;
 
-    case FGameVersion of
+    case GameSettings.GameVersion of
       gvAOK, gvAOKTrial:
         begin
           FIsMgl := True; FIsMgx := False; FIsMgz := False;
@@ -1102,7 +1107,7 @@ begin
         begin
           FIsMgl := False; FIsMgx := True; FIsMgz := False;
         end;
-      gvAOC11:
+      gvAOC11, gvAOC21:
         begin
           FIsMgl := False; FIsMgx := True; FIsMgz := True;
         end;
@@ -1505,15 +1510,18 @@ begin
                 Seek(28);
                 ReadChar(ver);
                 case ver of
-                  0: if (FGameVersion <> gvAOKTrial) then FGameVersion := gvAOK20;
-                  1: FGameVersion := gvAOK20a;
+                  0: if (GameSettings.GameVersion <> gvAOKTrial) then
+                    GameSettings.GameVersion := gvAOK20;
+                  1: GameSettings.GameVersion := gvAOK20a;
                 end;
                 Seek(3);
               end else
               begin
                 case od_type of
-                  $03: if (FGameVersion <> gvAOCTrial) then FGameVersion := gvAOC10;
-                  $04: if (FGameVersion = gvAOC) then FGameVersion := gvAOC10c;
+                  $03: if (GameSettings.GameVersion <> gvAOCTrial) then
+                    GameSettings.GameVersion := gvAOC10;
+                  $04: if (GameSettings.GameVersion = gvAOC) then
+                    GameSettings.GameVersion := gvAOC10c;
                 end;
                 Seek(20);
               end;
@@ -2045,7 +2053,6 @@ begin
   InGameChatMessages.Clear;
   Tributes.Clear;
   FAnalyzeTime := 0;
-  FGameVersion := gvUnknown;
   Researches.Clear;
   Units.Clear;
   GaiaObjects.Clear;
@@ -2248,16 +2255,8 @@ begin
     GaiaObjects.Sort(@GaiaObjectsCompare);
 
   { AOC11 bug or feature? }
-  if (FGameVersion > gvAOC10c) then
+  if (GameSettings.GameVersion > gvAOC10c) then
     GameSettings.PopLimit := 25 * GameSettings.PopLimit;
-end;
-
-function TRecAnalyst.GetGameVersion: AnsiString;
-begin
-  Result := '';
-  if not (FGameVersion in [Low(GAME_VERSIONS)..High(GAME_VERSIONS)]) then
-    Exit;
-  Result := GAME_VERSIONS[FGameVersion];
 end;
 {$IFDEF EXTENDED}
 procedure TRecAnalyst.Build(const FileName: String);
@@ -2415,8 +2414,8 @@ begin
             Player.IsCooping := True;
             Continue;
           end;
-          if (FGameVersion = gvAOKTrial) or (FGameVersion = gvAOCTrial) then
-            Seek(4);
+          if (GameSettings.GameVersion = gvAOKTrial)
+            or (GameSettings.GameVersion = gvAOCTrial) then Seek(4);
           Seek(num_player + 43);
 
           { skip player name }
@@ -2474,8 +2473,8 @@ begin
         if (i = 0) then
         begin
           { GAIA }
-          if (FGameVersion = gvAOKTrial) or (FGameVersion = gvAOCTrial) then
-            Seek(4);
+          if (GameSettings.GameVersion = gvAOKTrial) or
+            (GameSettings.GameVersion = gvAOCTrial) then Seek(4);
           Seek(num_player + 70);
           if FIsMgx then Seek(792) else Seek(756);
         end;

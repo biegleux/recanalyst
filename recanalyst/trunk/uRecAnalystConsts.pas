@@ -129,17 +129,18 @@ const
     'Normal', 'Explored', 'All Visible');
 
   MAP_SIZES: array[TMapSize] of AnsiString = (
-    'Tiny (2 players)', 'Small (3 players)', 'Medium (4 players)', 'Normal (6 players)',
-    'Large (8 players)', 'Giant');
+    'Tiny (2 players)', 'Small (3 players)', 'Medium (4 players)',
+    'Normal (6 players)', 'Large (8 players)', 'Giant');
 
   STARTING_AGES: array[TStartingAge] of AnsiString = (
-    'Unknown', 'Dark Age', 'Feudal Age', 'Castle Age', 'Imperial Age', 'Post-Imperial Age');
+    'Unknown', 'Dark Age', 'Feudal Age', 'Castle Age', 'Imperial Age',
+    'Post-Imperial Age');
 
   VICTORY_CONDITIONS: array[TVictoryCondition] of AnsiString = (
     'Standard', 'Conquest', 'Time Limit', 'Score Limit', 'Custom');
 
   CIVS: array[TCivilization] of AnsiString = (
-    'None',
+    '',
     'Britons',
     'Franks',
     'Goths',

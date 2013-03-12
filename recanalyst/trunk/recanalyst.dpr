@@ -518,7 +518,7 @@ begin
       dwPlayTime := PlayTime;
       bInGameCoop := InGameCoop;
       bIsFFA := IsFFA;
-      dwVersion := Ord(RecAnalyst.GameVersion);
+      dwVersion := Ord(GameVersion);
       CpyMem(szMap, Map);
       CpyMem(szPlayers, PlayersType);
       CpyMem(szPOV, POV);
@@ -528,7 +528,7 @@ begin
       CpyMem(szGameSpeed, sGameSpeed);
       CpyMem(szRevealMap, sRevealMap);
       CpyMem(szMapSize, sMapSize);
-      CpyMem(szVersion, RecAnalyst.sGameVersion);
+      CpyMem(szVersion, sGameVersion);
       CpyMem(szScFileName, ScFileName);
       if Assigned(lpVictory) then
       begin
