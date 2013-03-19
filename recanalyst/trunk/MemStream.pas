@@ -33,7 +33,7 @@ type
     procedure ReadChar(var Buffer: Byte);
     procedure ReadFloat(var Buffer: Single);
     procedure ReadBool(var Buffer: Boolean);
-    procedure ReadString(var Buffer; Len: Integer = 4);
+    procedure ReadString(var Buffer: array of AnsiChar; Len: Integer = 4);
   end;
 
 implementation
@@ -71,7 +71,7 @@ begin
   Buffer := (Bool <> 0);
 end;
 
-procedure TMemStream.ReadString(var Buffer; Len: Integer = 4);
+procedure TMemStream.ReadString(var Buffer: array of AnsiChar; Len: Integer = 4);
 var
   iLen: Int32;
   wLen: Word;
@@ -80,10 +80,12 @@ begin
     2: begin
       ReadWord(wLen);
       ReadBuffer(Buffer, wLen);
+      Buffer[wLen] := #0;
     end;
     4: begin
       ReadInt32(iLen);
       ReadBuffer(Buffer, iLen);
+      Buffer[iLen] := #0;
     end;
   end;
 end;

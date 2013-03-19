@@ -2,20 +2,20 @@
  * $Id$
  * This file is part of the recanalyst project.
  *
- * Copyright (c) 2009-2013, biegleux <biegleux[at]gmail[dot]com>
+ * Copyright (c) 2009-2013 biegleux <biegleux[at]gmail[dot]com>
  *
- * This program is free; software; you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published
- * by the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Lesser General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses>.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, see <http://www.gnu.org/licenses>.
  *}
 unit uRecAnalyst;
 
@@ -24,8 +24,8 @@ unit uRecAnalyst;
 {$ENDIF}
 
 {$IFNDEF FPC}
-  {$WEAKLINKRTTI ON}
-  {$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
+  {.$WEAKLINKRTTI ON}
+  {.$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
 {$ENDIF}
 
 {.$DEFINE EXTENDED}
@@ -42,7 +42,7 @@ type
   { TInitialState }
   TInitialState = class(TObject)
   private
-    function GetStartingAge: AnsiString;
+    function GetStartingAge(): AnsiString;
   public
     Food: Longint;
     Wood: Longint;
@@ -55,14 +55,14 @@ type
     MilitaryPop: Longint;
     ExtraPop: Longint;
     Position: TPoint;
-    constructor Create;
+    constructor Create();
     property StartingAgeString: AnsiString read GetStartingAge;
   end;
 
   { TPlayer }
   TPlayer = class(TObject)
   private
-    function GetCiv: AnsiString;
+    function GetCiv(): AnsiString;
   public
     Name: AnsiString;
     Index: Integer;
@@ -79,8 +79,8 @@ type
     ResignTime: Integer;
     Buildings: TBuildingList;
     InitialState: TInitialState;
-    constructor Create;
-    destructor Destroy; override;
+    constructor Create();
+    destructor Destroy(); override;
     procedure SetColor(const AIndex: Integer);
     property Civ: AnsiString read GetCiv;
   end;
@@ -88,15 +88,15 @@ type
   { TPlayerList }
   TPlayerList = class(TObject)
   private
-    FList: TObjectList;
-    function GetCount: Integer;
+    fList: TObjectList;
+    function GetCount(): Integer;
     function GetPlayer(Index: Integer): TPlayer;
   public
-    constructor Create;
-    destructor Destroy; override;
+    constructor Create();
+    destructor Destroy(); override;
     function AddPlayer(Player: TPlayer): Integer;
     function GetPlayerByIndex(Index: Integer): TPlayer;
-    procedure Clear;
+    procedure Clear();
     property Items[Index: Integer]: TPlayer read GetPlayer; default;
     property Count: Integer read GetCount;
   end;
@@ -104,25 +104,25 @@ type
   { TTeam }
   TTeam = class(TPlayerList)
   private
-    FIndex: Integer;
+    fIndex: Integer;
   public
-    constructor Create;
+    constructor Create();
     function AddPlayer(Player: TPlayer): Integer;
-    property Index: Integer read FIndex;
+    property Index: Integer read fIndex;
   end;
 
   { TTeamList }
   TTeamList = class(TObject)
   private
-    FList: TObjectList;
-    function GetCount: Integer;
+    fList: TObjectList;
+    function GetCount(): Integer;
     function GetTeam(Index: Integer): TTeam;
   public
-    constructor Create;
-    destructor Destroy; override;
+    constructor Create();
+    destructor Destroy(); override;
     function AddTeam(Team: TTeam): Integer;
     function GetTeamByIndex(Index: Integer): TTeam;
-    procedure Clear;
+    procedure Clear();
     property Items[Index: Integer]: TTeam read GetTeam; default;
     property Count: Integer read GetCount;
   end;
@@ -130,27 +130,27 @@ type
   { TVictory }
   TVictory = class(TObject)
   private
-    function GetVictoryString: AnsiString;
+    function GetVictoryString(): AnsiString;
   public
     TimeLimit: Longint;
     ScoreLimit: Longint;
     VictoryCondition: TVictoryCondition;
-    constructor Create;
+    constructor Create();
+    procedure Clear();
     property VictoryString: AnsiString read GetVictoryString;
   end;
 
   { TGameSettings }
   TGameSettings = class(TObject)
   private
-    FIsMgl: Boolean; { see GetDifficultyLevel }
-    function GetGameType: AnsiString;
-    function GetMapStyle: AnsiString;
-    function GetDifficultyLevel: AnsiString;
-    function GetGameSpeed: AnsiString;
-    function GetRevealMap: AnsiString;
-    function GetMapSize: AnsiString;
-    function GetGameVersion: AnsiString;
-    function GetIsScenario: Boolean;
+    function GetGameType(): AnsiString;
+    function GetMapStyle(): AnsiString;
+    function GetDifficultyLevel(): AnsiString;
+    function GetGameSpeed(): AnsiString;
+    function GetRevealMap(): AnsiString;
+    function GetMapSize(): AnsiString;
+    function GetGameVersion(): AnsiString;
+    function GetIsScenario(): Boolean;
   public
     GameType: TGameType;
     MapStyle: TMapStyle;
@@ -173,9 +173,9 @@ type
     ScFileName: AnsiString;
     GameVersion: TGameVersion;
     Victory: TVictory;
-    constructor Create;
-    destructor Destroy; override;
-    procedure Clear;
+    constructor Create();
+    destructor Destroy(); override;
+    procedure Clear();
     property sGameType: AnsiString read GetGameType;
     property sMapStyle: AnsiString read GetMapStyle;
     property sDifficultyLevel: AnsiString read GetDifficultyLevel;
@@ -189,22 +189,22 @@ type
   { TBaseObject }
   TBaseObject = class(TObject)
   private
-    FItemId: Integer;
-    function GetName: AnsiString; virtual; abstract;
+    fItemId: Integer;
+    function GetName(): AnsiString; virtual; abstract;
   public
     property Name: AnsiString read GetName;
-    constructor Create;
+    constructor Create();
   end;
 
   { TResearch }
   TResearch = class(TBaseObject)
   private
-    function GetName: AnsiString; override;
+    function GetName(): AnsiString; override;
   public
     Id: Integer;
     Time: Longint;
-    PlayerId: Integer;
-    constructor Create;
+    Player: TPlayer;
+    constructor Create();
   end;
 
   { TTribute }
@@ -215,16 +215,17 @@ type
     ResourceId: TResourceId;
     Amount: Integer;
     Fee: Single;
+    function GetResourceName(): AnsiString;
   end;
 
   { TTrainedUnit }
   TTrainedUnit = class(TBaseObject)
   private
-    function GetName: AnsiString; override;
+    function GetName(): AnsiString; override;
   public
     Id: Integer;
     Count: Integer;
-    constructor Create;
+    constructor Create();
   end;
 
   { TTrainedUnitList }
@@ -240,7 +241,7 @@ type
   { TBuilding }
   TBuilding = class(TTrainedUnit)
   private
-    function GetName: AnsiString; override;
+    function GetName(): AnsiString; override;
   end;
 
   { TBuildingList }
@@ -258,17 +259,12 @@ type
     Time: Integer;
     Player: TPlayer;
     Msg: AnsiString;
-    constructor Create;
+    constructor Create();
   end;
-(*
-  { TImageMapRes }
-  TImageMapItem = class(TObject)
-    Coordinates: TRect;
-    Hint: AnsiString;
-  end;
-*)
+
+  { TUnitObject }
   TUnitObject = class(TObject)
-    Owner: Integer;
+    Owner: TPlayer;
     Id: Integer;
     Position: TPoint;
   end;
@@ -278,39 +274,39 @@ type
   { TRecAnalyst }
   ERecAnalystException = class(Exception)
   private
-    FCode: Integer;
+    fCode: Integer;
   public
-    constructor Create(const Msg: String; Code: Integer);
-    property Code: Integer read FCode write FCode;
+    constructor Create(Code: Integer);
+    property Code: Integer read fCode write fCode;
   end;
 
   TRecAnalyst = class(TObject)
   private
-    FIsMgl: Boolean;
-    FIsMgx: Boolean;
-    FIsMgz: Boolean;
-    FHeaderStream: TMemStream;
-    FBodyStream: TMemStream;
-    FMapData: array of array of Integer;
-    FMapWidth: Longint;
-    FMapHeight: Longint;
-    FAnalyzeTime: Integer;
+    fIsMgl: Boolean;
+    fIsMgx: Boolean;
+    fIsMgz: Boolean;
+    fHeaderStream: TMemStream;
+    fBodyStream: TMemStream;
+    fMapData: array of array of Integer;
+    fMapWidth: Longint;
+    fMapHeight: Longint;
+    fAnalyzeTime: Integer;
 
     GaiaObjects: TObjectList;
     PlayerObjects: TObjectList;
     FAnalyzed: Boolean;
     {$IFDEF EXTENDED}FKeepStreams: Boolean;{$ENDIF}
-    FMapImage: TMemoryStream;
-    FMapImageSize: TSize;
+    fMapImage: TMemoryStream;
+    fMapImageSize: TSize;
 
     header_len: Int32;
     next_pos: Int32;
     {$IFDEF EXTENDED}objectives_pos: Int64;{$ENDIF}
 
-    function ExtractStreams: Boolean;
-    function AnalyzeHeader: Boolean;
-    function AnalyzeBody: Boolean;
-    procedure PostAnalyze;
+    function ExtractStreams(): Boolean;
+    function AnalyzeHeader(): Boolean;
+    function AnalyzeBody(): Boolean;
+    procedure PostAnalyze();
     procedure ReadPlayerInfoBlock(const num_player: Byte);
   public
     FileName: String;
@@ -323,20 +319,20 @@ type
     PreGameChatMessages: TObjectList;
     InGameChatMessages: TObjectList;
     {$IFDEF EXTENDED}CommentString: AnsiString;{$ENDIF}
-    constructor Create;
-    destructor Destroy; override;
+    constructor Create();
+    destructor Destroy(); override;
     class function GameTimeToString(const Time: Integer): AnsiString;
-    function Analyze: Boolean;
-    procedure BuildTeams;
+    function Analyze(): Boolean;
+    procedure BuildTeams();
     function GenerateMap(const Width: Integer; const Height: Integer): TMemoryStream;
-    procedure Reset;
+    procedure Reset();
     {$IFDEF EXTENDED}
     procedure Build(const FileName: String);
     function AddComment(const Comment: AnsiString = ''): Boolean;
     {$ENDIF}
     class function ErrorCodeToString(const ErrorCode: Integer): String;
-    property AnalyzeTime: Integer read FAnalyzeTime;
-    property Analyzed: Boolean read FAnalyzed;
+    property AnalyzeTime: Integer read fAnalyzeTime;
+    property Analyzed: Boolean read fAnalyzed;
     {$IFDEF EXTENDED}
     property KeepStreams: Boolean read FKeepStreams write FKeepStreams;
     {$ENDIF}
@@ -412,64 +408,61 @@ const
     ''
   );
 
-function UnitsCompare(Item1, Item2: Pointer): Integer; forward;
-function ResearchesCompare(Item1, Item2: Pointer): Integer; forward;
-function ChatCompare(Item1, Item2: Pointer): Integer; forward;
-function GaiaObjectsCompare(Item1, Item2: Pointer): Integer; forward;
-function ResearchById(const Id: Integer): Integer; forward;
-function UnitById(const Id: Integer): Integer; forward;
-function BuildingById(const Id: Integer): Integer; forward;
-function MapById(const Id: Integer): Integer; forward;
-function InArray(const Ary: array of Integer; Value: Integer): Integer; forward;
-
 { TBaseObject }
-constructor TBaseObject.Create;
+constructor TBaseObject.Create();
 begin
-  FItemId := -1;
+  inherited Create();
+  fItemId := -1;
 end;
 
 { TResearch }
-constructor TResearch.Create;
+constructor TResearch.Create();
 begin
-  inherited Create;
+  inherited Create();
   Id := 0;
-  PlayerId := 0;
+  Player := nil;
 end;
 
-function TResearch.GetName: AnsiString;
+function TResearch.GetName(): AnsiString;
 begin
-  if (FItemId <> -1) then
+  if (fItemId <> -1) then
   begin
-    Result := RESEARCHES[FItemId].Name;
+    Result := RESEARCHES[fItemId].Name;
     Exit;
   end;
 
-  FItemId := ResearchById(Id);
-  if (FItemId <> -1) then
-    Result := RESEARCHES[FItemId].Name
+  fItemId := ResearchById(Id);
+  if (fItemId <> -1) then
+    Result := RESEARCHES[fItemId].Name
   else
     Result := '';
 end;
 
-{ TTrainedUnit }
-constructor TTrainedUnit.Create;
+{ TTribute }
+function TTribute.GetResourceName(): AnsiString;
 begin
-  inherited Create;
+  Result := RESOURCES[ResourceId];
+end;
+
+{ TTrainedUnit }
+constructor TTrainedUnit.Create();
+begin
+  inherited Create();
   Id := 0;
   Count := 0;
 end;
 
-function TTrainedUnit.GetName: AnsiString;
+function TTrainedUnit.GetName(): AnsiString;
 begin
-  if (FItemId <> -1) then
+  if (fItemId <> -1) then
   begin
-    Result := UNITS[FItemId].Name;
+    Result := UNITS[fItemId].Name;
     Exit;
   end;
 
-  FItemId := UnitById(Id);
-  if (FItemId <> -1) then
-    Result := UNITS[FItemId].Name
+  fItemId := UnitById(Id);
+  if (fItemId <> -1) then
+    Result := UNITS[fItemId].Name
   else
     Result := '';
 end;
@@ -492,7 +485,7 @@ begin
   for i := 0 to Count - 1 do
   begin
     if Items[i].Id = Id then
-    begin                           
+    begin
       Result := Items[i];
       Exit;
     end;
@@ -501,17 +494,17 @@ begin
 end;
 
 { TBuilding }
-function TBuilding.GetName: AnsiString;
+function TBuilding.GetName(): AnsiString;
 begin
-  if (FItemId <> -1) then
+  if (fItemId <> -1) then
   begin
-    Result := BUILDINGS[FItemId].Name;
+    Result := BUILDINGS[fItemId].Name;
     Exit;
   end;
 
-  FItemId := BuildingById(Id);
-  if (FItemId <> -1) then
-    Result := BUILDINGS[FItemId].Name
+  fItemId := BuildingById(Id);
+  if (fItemId <> -1) then
+    Result := BUILDINGS[fItemId].Name
   else
     Result := '';
 end;
@@ -543,16 +536,18 @@ begin
 end;
 
 { TChatMessage }
-constructor TChatMessage.Create;
+constructor TChatMessage.Create();
 begin
+  inherited Create();
   Time := 0;
   Player := nil;
   Msg := '';
 end;
 
 { TInitialState }
-constructor TInitialState.Create;
+constructor TInitialState.Create();
 begin
+  inherited Create();
   Food := 0;
   Wood := 0;
   Stone := 0;
@@ -566,7 +561,7 @@ begin
   FillChar(Position, SizeOf(Position), 0);
 end;
 
-function TInitialState.GetStartingAge: AnsiString;
+function TInitialState.GetStartingAge(): AnsiString;
 begin
   Result := '';
   if (StartingAge >= Low(STARTING_AGES)) and (StartingAge <= High(STARTING_AGES)) then
@@ -574,8 +569,9 @@ begin
 end;
 
 { TPlayer }
-constructor TPlayer.Create;
+constructor TPlayer.Create();
 begin
+  inherited Create();
   Name := '';
   Index := -1;
   Human := False;
@@ -589,17 +585,18 @@ begin
   CastleTime := 0;
   ImperialTime := 0;
   ResignTime := 0;
-  Buildings := TBuildingList.Create;
-  InitialState := TInitialState.Create;
+  Buildings := TBuildingList.Create();
+  InitialState := TInitialState.Create();
 end;
 
-destructor TPlayer.Destroy;
+destructor TPlayer.Destroy();
 begin
-  Buildings.Free;
-  InitialState.Free;
+  Buildings.Free();
+  InitialState.Free();
+  inherited Destroy();
 end;
 
-function TPlayer.GetCiv: AnsiString;
+function TPlayer.GetCiv(): AnsiString;
 begin
   if (CivId in [Low(CIVS)..High(CIVS)]) then
     Result := CIVS[CivId]
@@ -613,126 +610,137 @@ begin
 end;
 
 { TPlayerList }
-constructor TPlayerList.Create;
+constructor TPlayerList.Create();
 begin
-  FList := TObjectList.Create;
+  inherited Create();
+  fList := TObjectList.Create();
 end;
 
-destructor TPlayerList.Destroy;
+destructor TPlayerList.Destroy();
 begin
-  FList.Free;
+  fList.Free();
+  inherited Destroy();
 end;
 
 function TPlayerList.AddPlayer(Player: TPlayer): Integer;
 begin
-  Result := FList.Add(Player);
+  Result := fList.Add(Player);
 end;
 
 function TPlayerList.GetPlayer(Index: Integer): TPlayer;
 begin
-  if (Index < 0) or (Index >= FList.Count) then
+  if (Index < 0) or (Index >= fList.Count) then
     Result := nil
   else
-    Result := FList[Index] as TPlayer;
+    Result := fList[Index] as TPlayer;
 end;
 
 function TPlayerList.GetPlayerByIndex(Index: Integer): TPlayer;
 var
   i: Integer;
 begin
-  for i := 0 to FList.Count - 1 do
+  for i := 0 to fList.Count - 1 do
   begin
-    if (TPlayer(FList[i]).Index = Index) then
+    if (TPlayer(fList[i]).Index = Index) then
     begin
-      Result := TPlayer(FList[i]);
+      Result := TPlayer(fList[i]);
       Exit;
     end;
   end;
   Result := nil;
 end;
 
-function TPlayerList.GetCount: Integer;
+function TPlayerList.GetCount(): Integer;
 begin
-  Result := FList.Count;
+  Result := fList.Count;
 end;
 
-procedure TPlayerList.Clear;
+procedure TPlayerList.Clear();
 begin
-  FList.Clear;
+  fList.Clear();
 end;
 
 { TTeam }
-constructor TTeam.Create;
+constructor TTeam.Create();
 begin
-  FList := TObjectList.Create(False);
-  FIndex := -1;
+  inherited Create();
+  fList := TObjectList.Create(False);
+  fIndex := -1;
 end;
 
 function TTeam.AddPlayer(Player: TPlayer): Integer;
 begin
   Result := inherited AddPlayer(Player);
-  if (FIndex = -1) then
-    FIndex := Player.Team;
+  if (fIndex = -1) then
+    fIndex := Player.Team;
 end;
 
 { TTeamList }
-constructor TTeamList.Create;
+constructor TTeamList.Create();
 begin
-  FList := TObjectList.Create;
+  inherited Create();
+  fList := TObjectList.Create();
 end;
 
-destructor TTeamList.Destroy;
+destructor TTeamList.Destroy();
 begin
-  FList.Free;
+  fList.Free();
+  inherited Destroy();
 end;
 
 function TTeamList.AddTeam(Team: TTeam): Integer;
 begin
-  Result := FList.Add(Team);
+  Result := fList.Add(Team);
 end;
 
 function TTeamList.GetTeam(Index: Integer): TTeam;
 begin
-  if (Index < 0) or (Index >= FList.Count) then
+  if (Index < 0) or (Index >= fList.Count) then
     Result := nil
   else
-    Result := FList[Index] as TTeam;
+    Result := fList[Index] as TTeam;
 end;
 
 function TTeamList.GetTeamByIndex(Index: Integer): TTeam;
 var
   i: Integer;
 begin
-  for i := 0 to FList.Count - 1 do
+  for i := 0 to fList.Count - 1 do
   begin
-    if ((FList[i] as TTeam).Index = Index) then
+    if ((fList[i] as TTeam).Index = Index) then
     begin
-      Result := FList[i] as TTeam;
+      Result := fList[i] as TTeam;
       Exit;
     end;
   end;
   Result := nil;
 end;
 
-function TTeamList.GetCount: Integer;
+function TTeamList.GetCount(): Integer;
 begin
-  Result := FList.Count;
+  Result := fList.Count;
 end;
 
-procedure TTeamList.Clear;
+procedure TTeamList.Clear();
 begin
-  FList.Clear;
+  fList.Clear();
 end;
 
 { TVictory }
-constructor TVictory.Create;
+constructor TVictory.Create();
+begin
+  inherited Create();
+  Clear();
+end;
+
+procedure TVictory.Clear();
 begin
   VictoryCondition := Low(TVictoryCondition);
   TimeLimit := 0;
   ScoreLimit := 0;
 end;
 
-function TVictory.GetVictoryString: AnsiString;
+function TVictory.GetVictoryString(): AnsiString;
 begin
   Result := '';
   if not (VictoryCondition in [Low(VICTORY_CONDITIONS)..High(VICTORY_CONDITIONS)]) then
@@ -754,21 +762,22 @@ begin
 end;
 
 { TGameSettings }
-constructor TGameSettings.Create;
+constructor TGameSettings.Create();
 begin
-  Clear;
-  Victory := TVictory.Create;
+  inherited Create();
+  Victory := TVictory.Create();
+  Clear();
 end;
 
-destructor TGameSettings.Destroy;
+destructor TGameSettings.Destroy();
 begin
   Owner := nil;
-  Victory.Free;
+  Victory.Free();
+  inherited Destroy();
 end;
 
-procedure TGameSettings.Clear;
+procedure TGameSettings.Clear();
 begin
-  FIsMgl := False;
   Map := '';
   PlayersType := '';
   POV := '';
@@ -791,26 +800,27 @@ begin
   IsFFA := False;
   Owner := nil;
   ScFileName := '';
+  Victory.Clear();
 end;
 
-function TGameSettings.GetGameType: AnsiString;
+function TGameSettings.GetGameType(): AnsiString;
 begin
   Result := '';
   if (GameType in [Low(GAME_TYPES)..High(GAME_TYPES)]) then
     Result := GAME_TYPES[GameType];
 end;
 
-function TGameSettings.GetMapStyle: AnsiString;
+function TGameSettings.GetMapStyle(): AnsiString;
 begin
   Result := '';
   if (MapStyle in [Low(MAP_STYLES)..High(MAP_STYLES)]) then
     Result := MAP_STYLES[MapStyle];
 end;
 
-function TGameSettings.GetDifficultyLevel: AnsiString;
+function TGameSettings.GetDifficultyLevel(): AnsiString;
 begin
   Result := '';
-  if FIsMgl then
+  if (GameVersion < gvAOC) then
   begin
     if (DifficultyLevel in [Low(AOK_DIFFICULTY_LEVELS)..High(AOK_DIFFICULTY_LEVELS)]) then
       Result := AOK_DIFFICULTY_LEVELS[DifficultyLevel];
@@ -821,28 +831,28 @@ begin
   end;
 end;
 
-function TGameSettings.GetGameSpeed: AnsiString;
+function TGameSettings.GetGameSpeed(): AnsiString;
 begin
   Result := '';
   if (Ord(GameSpeed) in [100, 150, 200]) then
     Result := GAME_SPEEDS[(Ord(GameSpeed) - 100) div 50];
 end;
 
-function TGameSettings.GetRevealMap: AnsiString;
+function TGameSettings.GetRevealMap(): AnsiString;
 begin
   Result := '';
   if (RevealMap in [Low(REVEAL_SETTINGS)..High(REVEAL_SETTINGS)]) then
     Result := REVEAL_SETTINGS[RevealMap];
 end;
 
-function TGameSettings.GetMapSize: AnsiString;
+function TGameSettings.GetMapSize(): AnsiString;
 begin
   Result := '';
   if (MapSize in [Low(MAP_SIZES)..High(MAP_SIZES)]) then
     Result := MAP_SIZES[MapSize];
 end;
 
-function TGameSettings.GetGameVersion: AnsiString;
+function TGameSettings.GetGameVersion(): AnsiString;
 begin
   Result := '';
   if not (GameVersion in [Low(GAME_VERSIONS)..High(GAME_VERSIONS)]) then
@@ -850,53 +860,91 @@ begin
   Result := GAME_VERSIONS[GameVersion];
 end;
 
-function TGameSettings.GetIsScenario: Boolean;
+function TGameSettings.GetIsScenario(): Boolean;
 begin
   Result := (GameType = gtScenario);
 end;
 
 { TRecAnalyst }
 
-constructor ERecAnalystException.Create(const Msg: String; Code: Integer);
+constructor ERecAnalystException.Create(Code: Integer);
 begin
-  inherited Create(Msg);
-  FCode := Code;
+  inherited Create(ErrorMessages[Code]);
+  fCode := Code;
 end;
 
-constructor TRecAnalyst.Create;
+constructor TRecAnalyst.Create();
 begin
-  FHeaderStream := TMemStream.Create;
-  FBodyStream := TMemStream.Create;
-  GameSettings := TGameSettings.Create;
-  Players := TPlayerList.Create;
-  Teams := TTeamList.Create;
-  PreGameChatMessages := TObjectList.Create;
-  InGameChatMessages := TObjectList.Create;
-  Tributes := TObjectList.Create;
-  Researches := TObjectList.Create;
-  Units := TTrainedUnitList.Create;
-  GaiaObjects := TObjectList.Create;
-  PlayerObjects := TObjectList.Create;
-  FMapImage := TMemoryStream.Create;
-  Reset;
+  inherited Create();
+  fHeaderStream := TMemStream.Create();
+  fBodyStream := TMemStream.Create();
+  GameSettings := TGameSettings.Create();
+  Players := TPlayerList.Create();
+  Teams := TTeamList.Create();
+  PreGameChatMessages := TObjectList.Create();
+  InGameChatMessages := TObjectList.Create();
+  Tributes := TObjectList.Create();
+  Researches := TObjectList.Create();
+  Units := TTrainedUnitList.Create();
+  GaiaObjects := TObjectList.Create();
+  PlayerObjects := TObjectList.Create();
+  fMapImage := TMemoryStream.Create();
+  Reset();
 end;
 
-destructor TRecAnalyst.Destroy;
+destructor TRecAnalyst.Destroy();
 begin
-  FHeaderStream.Free;
-  FBodyStream.Free;
-  GameSettings.Free;
-  Players.Free;
-  Teams.Free;
-  PreGameChatMessages.Free;
-  InGameChatMessages.Free;
-  Tributes.Free;
-  Units.Free;
-  Researches.Free;
-  GaiaObjects.Free;
-  PlayerObjects.Free;
-  SetLength(FMapData, 0);
-  FMapImage.Free;
+  fHeaderStream.Free();
+  fBodyStream.Free();
+  GameSettings.Free();
+  Players.Free();
+  Teams.Free();
+  PreGameChatMessages.Free();
+  InGameChatMessages.Free();
+  Tributes.Free();
+  Units.Free();
+  Researches.Free();
+  GaiaObjects.Free();
+  PlayerObjects.Free();
+  SetLength(fMapData, 0);
+  fMapImage.Free();
+  inherited Destroy();
+end;
+
+procedure TRecAnalyst.Reset();
+begin
+  fIsMgl := False;
+  fIsMgx := False;
+  fIsMgz := False;
+  fHeaderStream.Clear();
+  fBodyStream.Clear();
+  fMapWidth := 0;
+  fMapHeight := 0;
+  SetLength(fMapData, 0);
+  fMapData := nil;
+  FileName := '';
+  fAnalyzeTime := 0;
+  header_len := 0;
+  next_pos := 0;
+  GameSettings.Clear();
+  Players.Clear();
+  Teams.Clear();
+  PreGameChatMessages.Clear();
+  InGameChatMessages.Clear();
+  Tributes.Clear();
+  Researches.Clear();
+  Units.Clear();
+  GaiaObjects.Clear();
+  PlayerObjects.Clear();
+  fMapImage.Clear();
+  fMapImageSize.cx := 0;
+  fMapImageSize.cy := 0;
+  {$IFDEF EXTENDED}
+  fKeepStreams := False;
+  objectives_pos := 0;
+  CommentString := '';
+  {$ENDIF}
+  fAnalyzed := False;
 end;
 
 class function TRecAnalyst.GameTimeToString(const Time: Integer): AnsiString;
@@ -925,7 +973,7 @@ begin
   Result := Result + AnsiString(s);
 end;
 
-function TRecAnalyst.ExtractStreams: Boolean;
+function TRecAnalyst.ExtractStreams(): Boolean;
 var
   ms, inStream: TMemoryStream;
   count: Int64;
@@ -933,39 +981,40 @@ const
   MGL_EXT = '.mgl';
   MGX_EXT = '.mgx';
   MGZ_EXT = '.mgz';
+  NO_HEADER = -15; // raw inflate
 begin
   Result := False;
 
   if (FileName = '') then
-    raise ERecAnalystException.Create(c_filenotspecified, RECANALYST_NOFILE);
+    raise ERecAnalystException.Create(RECANALYST_NOFILE);
 
   if (LowerCase(ExtractFileExt(FileName)) = MGL_EXT) then
-    FIsMgl := True
+    fIsMgl := True
   else if (LowerCase(ExtractFileExt(FileName)) = MGX_EXT) then
-    FIsMgx := True
+    fIsMgx := True
   else if (LowerCase(ExtractFileExt(Filename)) = MGZ_EXT) then
   begin
-    FIsMgx := True; FIsMgz := True;
+    fIsMgx := True; fIsMgz := True;
   end else
-    raise ERecAnalystException.Create(c_wrongfileext, RECANALYST_FILEEXT);
+    raise ERecAnalystException.Create(RECANALYST_FILEEXT);
 
-  ms := TMemoryStream.Create;
-  inStream := TMemoryStream.Create;
+  ms := TMemoryStream.Create();
+  inStream := TMemoryStream.Create();
   try
     try
       ms.LoadFromFile(FileName);
       ms.Seek(0, soFromBeginning);
 
       if (ms.Read(header_len, SizeOf(header_len)) < SizeOf(header_len)) then
-        raise ERecAnalystException.Create(c_headerlenreaderror, RECANALYST_HEADLENREAD);
+        raise ERecAnalystException.Create(RECANALYST_HEADLENREAD);
 
       if (header_len = 0) then
-        raise ERecAnalystException.Create(c_headerlenempty, RECANALYST_EMPTYHEADER);
+        raise ERecAnalystException.Create(RECANALYST_EMPTYHEADER);
 
-      if FIsMgx then
+      if fIsMgx then
         ms.Read(next_pos, SizeOf(next_pos));
 
-      if FIsMgx then
+      if fIsMgx then
         Dec(header_len, SizeOf(next_pos) + SizeOf(header_len))
       else
         Dec(header_len, SizeOf(header_len));
@@ -974,31 +1023,31 @@ begin
       instream.Seek(0, soFromBeginning);
 
       {$IFDEF FPC}
-      if (ZDecompressStream2(inStream, FHeaderStream, -15) < 0) then // raw inflate
+      if (ZDecompressStream2(inStream, fHeaderStream, NO_HEADER) < 0) then
         raise ERecAnalystException.Create(c_cannotdecompress, RECANALYST_DECOMP);
       // zError (code)
       {$ELSE}
-      ZDecompressStream2(inStream, FHeaderStream, -15); // raw inflate
+      ZDecompressStream2(inStream, fHeaderStream, NO_HEADER);
       {$ENDIF}
 
       count := ms.Size - header_len - SizeOf(header_len);
-      if FIsMgx then count := count - SizeOf(next_pos);
-      FBodyStream.CopyFrom(ms, count);
+      if fIsMgx then count := count - SizeOf(next_pos);
+      fBodyStream.CopyFrom(ms, count);
 
       Result := True;
     except
       on ERecAnalystException do
         raise;
       on EReadError do
-        raise ERecAnalystException.Create(c_cannotreadsection, RECANALYST_FILEREAD);
+        raise ERecAnalystException.Create(RECANALYST_FILEREAD);
       on EFOpenError do
-        raise ERecAnalystException.Create(c_cannotopenfile, RECANALYST_FILEOPEN);
+        raise ERecAnalystException.Create(RECANALYST_FILEOPEN);
       {$IFNDEF FPC}
       on EZDecompressionError do
-        raise ERecAnalystException.Create(c_cannotdecompress, RECANALYST_DECOMP);
+        raise ERecAnalystException.Create(RECANALYST_DECOMP);
       {$ENDIF}
       else
-        raise ERecAnalystException.Create(c_unknown, RECANALYST_UNKNOWN);
+        raise ERecAnalystException.Create(RECANALYST_UNKNOWN);
     end;
   finally
     FreeAndNil(ms);
@@ -1006,7 +1055,7 @@ begin
   end;
 end;
 
-function TRecAnalyst.AnalyzeHeader: Boolean;
+function TRecAnalyst.AnalyzeHeader(): Boolean;
 const
   constant2: array[0..7] of AnsiChar = (#$9A, #$99, #$99, #$99, #$99, #$99, #$F9, #$3F);
   separator: array[0..3] of AnsiChar = (#$9D, #$FF, #$FF, #$FF);
@@ -1029,7 +1078,7 @@ var
   reveal_map, map_size, pop_limit: Int32;
   game_type, lock_diplomacy: Byte;
   lock_teams: Boolean;
-  num_chat, chat_len: Int32;
+  num_chat: Int32;
   include_ai: Boolean;
   string_length: Int32;
   num_string, num_rule: Word;
@@ -1043,7 +1092,6 @@ var
   ChatMessage: TChatMessage;
   num_condition: Int32;
   team_indexes: array[0..7] of Byte;
-  original_sc_filename_len, instruction_len: Word;
   separator_ptr: Pointer;
   unknown25, victory_condition: Int32;
   is_timelimit: Byte;
@@ -1052,25 +1100,23 @@ var
 begin
   FillChar(buff, SizeOf(buff), $00);
   FillChar(buff256, SizeOf(buff256), #0);
-
-  with FHeaderStream do
+  with fHeaderStream do
   begin
     Seek(0, soFromBeginning);
-
     { getting version }
     FillChar(version, SizeOf(version), #0);
     ReadBuffer(version, SizeOf(version));
     if (version = VER_94) then
     begin
-      if FIsMgz then
+      if fIsMgz then
         GameSettings.GameVersion := gvAOC11
       else
         GameSettings.GameVersion := gvAOC;
     end else if (version = VER_93) then
       GameSettings.GameVersion := gvAOK
-    else if (version = TRL_93) and FIsMgx then
+    else if (version = TRL_93) and fIsMgx then
       GameSettings.GameVersion := gvAOCTrial
-    else if (version = TRL_93) and FIsMgl then
+    else if (version = TRL_93) and fIsMgl then
       GameSettings.GameVersion := gvAOKTrial
     else if (version = VER_95) then
       GameSettings.GameVersion := gvAOC21
@@ -1080,19 +1126,17 @@ begin
     case GameSettings.GameVersion of
       gvAOK, gvAOKTrial:
         begin
-          FIsMgl := True; FIsMgx := False; FIsMgz := False;
+          fIsMgl := True; fIsMgx := False; fIsMgz := False;
         end;
       gvAOC, gvAOCTrial:
         begin
-          FIsMgl := False; FIsMgx := True; FIsMgz := False;
+          fIsMgl := False; fIsMgx := True; fIsMgz := False;
         end;
       gvAOC11, gvAOC21:
         begin
-          FIsMgl := False; FIsMgx := True; FIsMgz := True;
+          fIsMgl := False; fIsMgx := True; fIsMgz := True;
         end;
     end;
-    GameSettings.FIsMgl := FIsMgl;
-
     { getting Trigger_info position }
     Seek(-SizeOf(constant2), soFromEnd);
     trigger_info_pos := 0;
@@ -1107,7 +1151,7 @@ begin
     until (Position < 0);
 
     if (trigger_info_pos = 0) then
-      raise ERecAnalystException.Create(c_triggerinfonotfound, RECANALYST_NOTRIGG);
+      raise ERecAnalystException.Create(RECANALYST_NOTRIGG);
 
     { getting Game_settings position }
     game_settings_pos := 0;
@@ -1122,16 +1166,15 @@ begin
     until (Position < 0);
 
     if (game_settings_pos = 0) then
-      raise ERecAnalystException.Create(c_gamesettingsnotfound, RECANALYST_NOGAMESETS);
+      raise ERecAnalystException.Create(RECANALYST_NOGAMESETS);
 
     { getting Scenario_header position }
     scenario_header_pos := 0;
-    if FIsMgx then
+    if fIsMgx then
       separator_ptr := @scenario_constant
     else
       separator_ptr := @aok_separator;
     { note: SizeOf(scenario_constant) = SizeOf(aok_separator) }
-
     repeat
       ReadBuffer(buff, SizeOf(scenario_constant));
       if CompareMem(@buff, separator_ptr, SizeOf(scenario_constant)) then
@@ -1141,16 +1184,13 @@ begin
       end;
       Seek(-(SizeOf(scenario_constant) + 1));
     until (Position < 0);
-
     { getting Game_Settings data }
     { skip negative[2] }
     Seek(game_settings_pos + 8, soFromBeginning);
-    if FIsMgx then ReadInt32(map_id);
-
+    if fIsMgx then ReadInt32(map_id);
     ReadInt32(difficulty);
     ReadBool(lock_teams); { duplicated data, see lock_diplomacy }
-
-    if FIsMgx then
+    if fIsMgx then
     begin
       i := MapById(map_id);
       if (i <> -1) then
@@ -1165,33 +1205,27 @@ begin
         GameSettings.MapId := map_id;
       end;
     end;
-
     GameSettings.DifficultyLevel := TDifficultyLevel(difficulty);
     GameSettings.LockDiplomacy := lock_teams;
-
     { getting Player_info data }
     for i := 0 to 8 do
     begin
       ReadInt32(player_data_index);
       ReadInt32(human);
-      Read(name_len, SizeOf(name_len));
-      Read(buff256, name_len);
-      buff256[name_len] := #0;
-
+      ReadString(buff256);
       { sometimes very rarely index is 1 }
       if (human = 0) or (human = 1) then Continue;
       if (i <> 0) then
       begin
-        Player := TPlayer.Create;
+        Player := TPlayer.Create();
         Player.Name := buff256;
         Player.Index := player_data_index;
         Player.Human := (human = $02);
         Players.AddPlayer(Player);
       end;
     end;
-
     { getting game type for aok }
-    if FIsMgl then
+    if fIsMgl then
     begin
       Seek(trigger_info_pos - SizeOf(constant2), soFromBeginning);
       Seek(-6);
@@ -1202,10 +1236,9 @@ begin
         256: GameSettings.GameType := gtRegicide;
       end;
     end;
-
     { getting victory }
     Seek(trigger_info_pos - SizeOf(constant2), soFromBeginning);
-    if FIsMgx then Seek(-7);
+    if fIsMgx then Seek(-7);
     Seek(-110);
     ReadInt32(victory_condition);
     Seek(8);
@@ -1219,13 +1252,10 @@ begin
       if (is_timelimit <> 0) then
         TimeLimit := Round(time_limit) div 10;
     end;
-
     { Trigger_info }
     Seek(trigger_info_pos + 1, soFromBeginning);
-
     { always zero in mgl? or not a really trigger_info here for aok }
     ReadInt32(num_trigger);
-
     if (num_trigger <> 0) then
     begin
       { skip Trigger_info data }
@@ -1255,11 +1285,9 @@ begin
         Seek(76 * num_condition);
       end;
       Seek(num_trigger shl 2);
-
       GameSettings.Map := '';
       GameSettings.GameType := gtScenario;  { obsolete? }
     end;
-
     { Other_data }
     ReadBuffer(team_indexes, SizeOf(team_indexes));
 
@@ -1271,7 +1299,7 @@ begin
     Seek(4);  { always 1? }
     ReadInt32(map_size);
     ReadInt32(pop_limit);
-    if FIsMgx then
+    if fIsMgx then
     begin
       ReadChar(game_type);
       ReadChar(lock_diplomacy);
@@ -1282,42 +1310,37 @@ begin
       RevealMap := TRevealMap(reveal_map);
       MapSize := TMapSize(map_size);
       PopLimit := pop_limit;
-      if FIsMgx then
+      if fIsMgx then
       begin
         LockDiplomacy := (lock_diplomacy = $01);
         GameType := TGameType(game_type);
       end;
     end;
-
-    { here comes pre-game chat (mgl doesn't hold this information }
-    if FIsMgx then
+    { here comes pre-game chat (mgl doesn't contain this information }
+    if fIsMgx then
     begin
       ReadInt32(num_chat);
       for i := 0 to num_chat - 1 do
       begin
-        ReadInt32(chat_len);
-
+        ReadString(buff65536);
         { zero-length chat exists }
-        if (chat_len = 0) then Continue;
-        ReadBuffer(buff65536, chat_len);
+        if (buff65536[0] = #0) then Continue;
         if (buff65536[0] = '@') and (buff65536[1] = '#') and (buff65536[2] >= '1') and (buff65536[2] <= '8') then
         begin
-          buff65536[chat_len] := #0;
-
-          ChatMessage := TChatMessage.Create;
+          //buff65536[chat_len] := #0;
+          ChatMessage := TChatMessage.Create();
           // buff65536[2] is not really player index
-          // TODO may be wrong if someone enter/leave game, or coop, no workaround exists (players may have same names)
+          // TODO may be wrong if someone enter/leave game, or coop, no workaround
+          // exists, as players may have same names
           ChatMessage.Player := Players.GetPlayerByIndex(StrToIntDef(String(buff65536[2]), 0));
           ChatMessage.Msg := Copy(buff65536, 4, Length(buff65536));
           PreGameChatMessages.Add(ChatMessage);
         end;
       end;
     end;
-
     { skip AI_info if exists }
     Seek($0C, soFromBeginning);
     ReadBool(include_ai);
-
     if (include_ai) then
     begin
       Seek(2);
@@ -1337,14 +1360,12 @@ begin
       end;
       Seek(5544);
     end;
-
     { getting data }
     Seek(4);
     ReadInt32(game_speed);
     Seek(37);
     ReadWord(rec_player_ref);
     ReadChar(num_player);
-
     Dec(num_player);
 
     GameSettings.GameSpeed := TGameSpeed(game_speed);
@@ -1366,11 +1387,11 @@ begin
 
     { getting map }
     Seek(62);
-    if FIsMgl then Seek(-2);
+    if fIsMgl then Seek(-2);
     ReadInt32(map_size_x);
     ReadInt32(map_size_y);
-    FMapWidth := map_size_x;
-    FMapHeight := map_size_y;
+    fMapWidth := map_size_x;
+    fMapHeight := map_size_y;
 
     ReadInt32(num_unknown_data);
     { unknown data }
@@ -1382,14 +1403,15 @@ begin
     end;
     Seek(2);
 
-    SetLength(FMapData, map_size_x, map_size_y);
+    SetLength(fMapData, map_size_x, map_size_y);
     { map data }
     for y := 0 to map_size_y - 1 do
       for x := 0 to map_size_x - 1 do
       begin
         ReadChar(terrain_id);
         ReadChar(elevation);
-        FMapData[x, y] := terrain_id + 1000 * (elevation + 1);
+        //fMapData[x, y] := terrain_id + 1000 * (elevation + 1);
+        fMapData[x, y] := terrain_id;
       end;
 
     ReadInt32(num_data);
@@ -1404,43 +1426,32 @@ begin
     Seek((map_size_x2 * map_size_y2 shl 2) + 4);
     ReadInt32(num_unknown_data2);
     Seek(27 * num_unknown_data2 + 4);
-
     { getting Player_info }
     ReadPlayerInfoBlock(num_player);
-
     { getting objectives or instructions }
     if (scenario_header_pos > 0) then
     begin
       Seek(scenario_header_pos + 4433, soFromBeginning);
       { original scenario file name }
-      ReadWord(original_sc_filename_len);
-      if (original_sc_filename_len > 0) then
+      ReadString(buff65536, 2);
+      if (buff65536[0] <> #0) then
       begin
-        FillChar(buff65536, SizeOf(buff65536), #0);
-        ReadBuffer(buff65536, original_sc_filename_len);
         GameSettings.ScFileName := buff65536;
-        if FIsMgl then
+        if fIsMgl then
           GameSettings.GameType := gtScenario; { this way we detect scenarios in mgl, is there any other way? }
       end;
-      if FIsMgx then Seek(24) else Seek(20);
-
+      if fIsMgx then Seek(24) else Seek(20);
       { scenario instruction or Objectives string, depends on game type }
       {$IFDEF EXTENDED}objectives_pos := Position;{$ENDIF}
-      ReadWord(instruction_len);
-      if (instruction_len > 0) then
-      begin
-        FillChar(buff65536, SizeOf(buff65536), #0);
-        ReadBuffer(buff65536, instruction_len);
-        if not GameSettings.IsScenario then
-          GameSettings.ObjectivesString := buff65536;
-      end;
+      ReadString(buff65536, 2);
+      if (buff65536[0] <> #0) and not GameSettings.IsScenario then
+        GameSettings.ObjectivesString := buff65536;
     end;
-
     Result := True;
   end;
 end;
 
-function TRecAnalyst.AnalyzeBody: Boolean;
+function TRecAnalyst.AnalyzeBody(): Boolean;
 var
   time_cnt: Int32;
   m_body_len, i, idx: Integer;
@@ -1462,20 +1473,17 @@ var
   ChatMessage: TChatMessage;
 begin
   time_cnt := Ord(GameSettings.GameSpeed);
-
-  m_body_len := FBodyStream.Size;
+  m_body_len := fBodyStream.Size;
   FillChar(buff256, SizeOf(buff256), 0);
-
-  with FBodyStream do
+  with fBodyStream do
   begin
     Seek(0, soFromBeginning);
     while (Position < m_body_len - 3) do
     begin
-      if (Position = 0) and FIsMgl then
+      if (Position = 0) and fIsMgl then
         od_type := $04
       else
         ReadInt32(od_type);
-
       { ope_data types: 4(Game_start or Chat), 2(Sync), or 1(Command) }
       case od_type of
         $04, $03:
@@ -1484,7 +1492,7 @@ begin
             if (command = $01F4) then
             begin
               { Game_start }
-              if FIsMgl then
+              if fIsMgl then
               begin
                 Seek(28);
                 ReadChar(ver);
@@ -1494,8 +1502,7 @@ begin
                   1: GameSettings.GameVersion := gvAOK20a;
                 end;
                 Seek(3);
-              end else
-              begin
+              end else begin
                 case od_type of
                   $03: if (GameSettings.GameVersion <> gvAOCTrial) then
                     GameSettings.GameVersion := gvAOC10;
@@ -1517,10 +1524,10 @@ begin
                 if (buff256[3] = '-') and (buff256[4] = '-') and
                    (buff256[chat_len - 3] = '-') and (buff256[chat_len - 2] = '-') then
                 begin
-                  // skip
+                  // skip messages like "--Warning: You are being under attack... --"
                 end else
                 begin
-                  ChatMessage := TChatMessage.Create;
+                  ChatMessage := TChatMessage.Create();
                   ChatMessage.Time := time_cnt;
                   ChatMessage.Player := Players.GetPlayer(StrToIntDef(String(buff256[2]), 0) - 1);
                   ChatMessage.Msg := Copy(buff256, 4, System.Length(buff256));
@@ -1557,7 +1564,7 @@ begin
                     if Assigned(Player) and (Player.ResignTime = 0) then
                     begin
                       Player.ResignTime := time_cnt;
-                      ChatMessage := TChatMessage.Create;
+                      ChatMessage := TChatMessage.Create();
                       ChatMessage.Time := Player.ResignTime;
                       ChatMessage.Msg := AnsiString(Format(c_resigned, [Player.Name]));
                       InGameChatMessages.Add(ChatMessage);
@@ -1572,62 +1579,53 @@ begin
                   ReadWord(player_id);
                   ReadWord(research_id);
                   Player := Players.GetPlayerByIndex(player_id);
-
-                  case research_id of
-                    101:
-                      begin
-                        { feudal time }
-                        if Assigned(Player) then
-                          Player.FeudalTime := time_cnt + 130000; { + research time (2:10) }
-                      end;
-                    102:
-                      begin
-                        { castle time }
-                        if Assigned(Player) then
+                  if Assigned(Player) then
+                  begin
+                    case research_id of
+                      101:
                         begin
+                          { feudal time }
+                          Player.FeudalTime := time_cnt + 130000; { + research time (2:10) }
+                        end;
+                      102:
+                        begin
+                          { castle time }
                           if (Player.CivId = cPersians) then
                             { about 10% less, but calculated as 160s / 1.10 despite of -10% = 144s }
                             Player.CastleTime := time_cnt + Round(160000 / 1.10)
                           else
                             Player.CastleTime := time_cnt + 160000;
                         end;
-                      end;
-                    103:
-                      begin
-                        { imperial time }
-                        if Assigned(Player) then
+                      103:
                         begin
+                          { imperial time }
                           if (Player.CivId = cPersians) then
                             { about 15% less, but calculated as 190s / 1.15 despite of -15% = 161,5s }
                             Player.ImperialTime := time_cnt + Round(190000 / 1.15)
                           else
                             Player.ImperialTime := time_cnt + 190000;
                         end;
-                      end;
-                  end;
-
-                  if Assigned(Player) then
-                  begin
-                    { remember this is the time player has just started to research the particular technology,
-                      repetitious researching may occure, here we are asking about it }
+                    end;
+                    { remember this is the time player has just started to research
+                      the particular technology, repetitious researching may occure,
+                      here we are asking about it }
                     idx := -1;
                     for i := Researches.Count - 1 downto 0 do
                     begin
                       Res := Researches[i] as TResearch;
-                      if (Res.Id = research_id) and (Res.PlayerId = player_id) then
+                      if (Res.Id = research_id) and (Res.Player.Index = player_id) then
                       begin
                         idx := i;
                         Break;
                       end;
                     end;
-
                     if (idx = -1) then
                     begin
                       { just add this research }
-                      Res := TResearch.Create;
+                      Res := TResearch.Create();
                       Res.Id := research_id;
                       Res.Time := time_cnt;
-                      Res.PlayerId := player_id;
+                      Res.Player := Players.GetPlayerByIndex(player_id);
                       Researches.Add(Res);
                     end else
                     begin
@@ -1647,13 +1645,12 @@ begin
                   ReadInt32(object_id);
                   ReadWord(unit_type_id);
                   ReadWord(unit_num);
-
+                  FixUnitTypeId(unit_type_id);
                   TrainedUnit := Units.GetUnit(unit_type_id);
                   if Assigned(TrainedUnit) then
                     Inc(TrainedUnit.Count, unit_num)
-                  else
-                  begin
-                    TrainedUnit := TTrainedUnit.Create;
+                  else begin
+                    TrainedUnit := TTrainedUnit.Create();
                     TrainedUnit.Id := unit_type_id;
                     TrainedUnit.Count := unit_num;
                     Units.Add(TrainedUnit);
@@ -1665,13 +1662,12 @@ begin
                   { pc trains unit }
                   Seek(10);
                   ReadWord(unit_type_id);
-
+                  FixUnitTypeId(unit_type_id);
                   TrainedUnit := Units.GetUnit(unit_type_id);
                   if Assigned(TrainedUnit) then
                     Inc(TrainedUnit.Count)
-                  else
-                  begin
-                    TrainedUnit := TTrainedUnit.Create;
+                  else begin
+                    TrainedUnit := TTrainedUnit.Create();
                     TrainedUnit.Id := unit_type_id;
                     TrainedUnit.Count := 1;
                     Units.Add(TrainedUnit);
@@ -1686,12 +1682,7 @@ begin
                   Seek(8);
                   { building_type_id unit_type_id }
                   ReadWord(building_type_id);
-
-                  if (InArray(biGates, building_type_id) <> -1) then
-                    building_type_id := biGate
-                  else if (InArray(biPalisadeGates, building_type_id) <> -1) then
-                    building_type_id := biPalisadeGate;
-
+                  FixBuildingTypeId(building_type_id);
                   Player := Players.GetPlayerByIndex(player_id);
                   if Assigned(Player) then
                   begin
@@ -1699,7 +1690,7 @@ begin
                     if Assigned(Building) then
                       Inc(Building.Count)
                     else begin
-                      Building := TBuilding.Create;
+                      Building := TBuilding.Create();
                       Building.Id := building_type_id;
                       Building.Count := 1;
                       Player.Buildings.Add(Building);
@@ -1717,10 +1708,10 @@ begin
                   ReadFloat(amount_tributed);
                   ReadFloat(market_fee);
                   PlayerFrom := Players.GetPlayerByIndex(player_id_from);
-                  PlayerTo   := Players.GetPlayerByIndex(player_id_to);
+                  PlayerTo := Players.GetPlayerByIndex(player_id_to);
                   if Assigned(PlayerFrom) and Assigned(PlayerTo) then
                   begin
-                    Tribute := TTribute.Create;
+                    Tribute := TTribute.Create();
                     Tribute.Time       := time_cnt;
                     Tribute.PlayerFrom := PlayerFrom;
                     Tribute.PlayerTo   := PlayerTo;
@@ -1757,43 +1748,35 @@ begin
         end;
       end;
     end;  { endwhile }
-
     GameSettings.PlayTime := time_cnt;
   end;
   Result := True;
 end;
 
-function TRecAnalyst.Analyze: Boolean;
+function TRecAnalyst.Analyze(): Boolean;
 var
   StartTime: DWORD;
 begin
   Result := False;
-  StartTime := GetTickCount;
   try
-    try
-      if not ExtractStreams then Exit;
-      if not AnalyzeHeader then Exit;
-      if not AnalyzeBody then Exit;
-      PostAnalyze;
-      FAnalyzed := True;
-    except
-      FHeaderStream.Clear;
-      FBodyStream.Clear;
-      raise;
-    end;
+    StartTime := GetTickCount();
+    if not ExtractStreams() then Exit;
+    if not AnalyzeHeader() then Exit;
+    if not AnalyzeBody() then Exit;
+    PostAnalyze();
+    fAnalyzed := True;
+    fAnalyzeTime := GetTickCount() - StartTime;
+    Result := True;
   finally
     {$IFDEF EXTENDED}if not FKeepStreams then{$ENDIF}
     begin
-      FHeaderStream.Clear;
-      FBodyStream.Clear;
+      fHeaderStream.Clear();
+      fBodyStream.Clear();
     end;
   end;
-
-  FAnalyzeTime := GetTickCount - StartTime;
-  Result := True;
 end;
 
-procedure TRecAnalyst.BuildTeams;
+procedure TRecAnalyst.BuildTeams();
 var
   Player, Player_: TPlayer;
   Team: TTeam;
@@ -1828,7 +1811,7 @@ begin
       end;
       if not found then
       begin
-        Team := TTeam.Create;
+        Team := TTeam.Create();
         Team.AddPlayer(Player);
         Teams.AddTeam(Team);
       end;
@@ -1837,7 +1820,7 @@ begin
       if Assigned(Team) then
         Team.AddPlayer(Player)
       else begin
-        Team := TTeam.Create;
+        Team := TTeam.Create();
         Team.AddPlayer(Player);
         Teams.AddTeam(Team);
       end;
@@ -1845,9 +1828,10 @@ begin
   end;
 end;
 
-function TRecAnalyst.GenerateMap(const Width: Integer; const Height: Integer): TMemoryStream;
+function TRecAnalyst.GenerateMap(const Width: Integer;
+  const Height: Integer): TMemoryStream;
 var
-  x, y, i, terrain_id, elevation: Integer;
+  x, y, i, terrain_id{, elevation}: Integer;
   Player: TPlayer;
   UO: TUnitObject;
 
@@ -1863,27 +1847,29 @@ var
   encoderClsid: TGUID;
   Png: TGPBitmap;
   Stream: IStream;
+  NomadLikeMap: Boolean;
 begin
-  Result := FMapImage;
-  FMapImage.Position := 0;
-  if (FMapImage.Size > 0) and (Width = FMapImageSize.cx) and (Height = FMapImageSize.cy) then
+  Result := fMapImage;
+  fMapImage.Position := 0;
+  if (fMapImage.Size > 0) and (Width = fMapImageSize.cx) and (Height = fMapImageSize.cy) then
     Exit;
-  if not FAnalyzed or not Assigned(FMapData) then
+  if not FAnalyzed or not Assigned(fMapData) then
     Exit;
 
-  InitializeGdiplus;
+  InitializeGdiplus();
 
-  Bmp := TGPBitmap.Create(FMapWidth, FMapHeight, PixelFormat24bppRGB);
+  Bmp := TGPBitmap.Create(fMapWidth, fMapHeight, PixelFormat24bppRGB);
   Graphics := TGPGraphics.Create(Bmp);
 
   try
-    for x := 0 to FMapWidth - 1 do
+    for x := 0 to fMapWidth - 1 do
     begin
-      for y := 0 to FMapHeight - 1 do
+      for y := 0 to fMapHeight - 1 do
       begin
-        terrain_id := FMapData[x, y] mod 1000;
-        elevation := (FMapData[x, y] - terrain_id) div 1000;
-        Dec(elevation);
+        terrain_id := fMapData[x, y];
+        //terrain_id := fMapData[x, y] mod 1000;
+        //elevation := (fMapData[x, y] - terrain_id) div 1000;
+        //Dec(elevation);
 
         if (terrain_id in [Low(TERRAIN_COLORS)..High(TERRAIN_COLORS)]) then
           Bmp.SetPixel(x, y, ColorRefToARGB(TERRAIN_COLORS[terrain_id]))
@@ -1931,17 +1917,34 @@ begin
         end;
       end;
     finally
-      GoldBrush.Free;
-      StoneBrush.Free;
-      CliffBrush.Free;
-      RelicBrush.Free;
-      FoodBrush.Free;
+      GoldBrush.Free();
+      StoneBrush.Free();
+      CliffBrush.Free();
+      RelicBrush.Free();
+      FoodBrush.Free();
     end;
 
     { draw positions }
     Graphics.SetSmoothingMode(SmoothingModeAntiAlias);
 
-    if not GameSettings.IsScenario and (GameSettings.MapId <> miNomad) then
+    NomadLikeMap := GameSettings.MapId = miNomad;
+    if (not NomadLikeMap and (GameSettings.MapId = miCustom) and (Players.Count > 0)) then
+    begin
+      Player := nil;
+      for i := 0 to Players.Count - 1 do
+        if (Players[i].CivId <> cHuns) then
+        begin
+          Player := Players[i];
+          Break;
+        end;
+      if Assigned(Player) then
+        NomadLikeMap := (Player.InitialState.HouseCapacity = 0)
+      else
+        // usually no scout in nomad maps
+        NomadLikeMap := (Players[0].InitialState.MilitaryPop = 0);
+    end;
+
+    if not GameSettings.IsScenario and not NomadLikeMap then
     begin
       { we do not draw positions in scenarios as they may be set anywhere }
       for i := 0 to Players.Count - 1 do
@@ -1959,8 +1962,8 @@ begin
             Graphics.FillEllipse(PlayerBrush, MakeRect(Rect(Position.X - 4,
               Position.Y - 4, Position.X + 4, Position.Y + 4)));
           finally
-            PlayerPen.Free;
-            PlayerBrush.Free;
+            PlayerPen.Free();
+            PlayerBrush.Free();
           end;
         end;
       end;
@@ -1972,19 +1975,18 @@ begin
     for i := 0 to PlayerObjects.Count - 1 do
     begin
       UO := PlayerObjects[i] as TUnitObject;
-      Player := Players.GetPlayerByIndex(UO.Owner);
-      if not Assigned(Player) then
+      if not Assigned(UO.Owner) then
         Continue;
-      PlayerBrush := TGPSolidBrush.Create(ColorRefToARGB(Player.Color));
+      PlayerBrush := TGPSolidBrush.Create(ColorRefToARGB(UO.Owner.Color));
       try
         Graphics.FillRectangle(PlayerBrush, MakeRect(Rect(UO.Position.X - 1,
           UO.Position.Y - 1, UO.Position.X + 1, UO.Position.Y + 1)));
       finally
-        PlayerBrush.Free;
+        PlayerBrush.Free();
       end;
     end;
 
-    ns := SizeAfterRotation(-45, FMapWidth, FMapHeight);
+    ns := SizeAfterRotation(-45, fMapWidth, fMapHeight);
     sx := Width / ns.cx;
     sy := Height / ns.cy;
 
@@ -1996,60 +1998,24 @@ begin
       PngGraphics.TranslateTransform(Png.GetWidth / 2.0, Png.GetHeight / 2.0);
       PngGraphics.ScaleTransform(sx, sy);
       PngGraphics.RotateTransform(-45);
-      PngGraphics.DrawImage(Bmp, -(FMapWidth / 2), -(FMapHeight / 2));
+      PngGraphics.DrawImage(Bmp, -(fMapWidth / 2), -(fMapHeight / 2));
 
-      FMapImage.Clear;
-      Stream := TStreamAdapter.Create(FMapImage, soReference);
+      fMapImage.Clear();
+      Stream := TStreamAdapter.Create(fMapImage, soReference);
       Png.Save(Stream, encoderClsid, nil);
-      FMapImage.Position := 0;
+      fMapImage.Position := 0;
     finally
-      Png.Free;
-      PngGraphics.Free;
+      Png.Free();
+      PngGraphics.Free();
     end;
   finally
-    Bmp.Free;
-    Graphics.Free;
-    FinalizeGdiplus;
+    Bmp.Free();
+    Graphics.Free();
+    FinalizeGdiplus();
   end;
 end;
 
-procedure TRecAnalyst.Reset;
-begin
-  FIsMgl := False;
-  FIsMgx := False;
-  FIsMgz := False;
-  FHeaderStream.Clear;
-  FBodyStream.Clear;
-  FMapWidth := 0;
-  FMapHeight := 0;
-  FileName := '';
-  SetLength(FMapData, 0);
-  FMapData := nil;
-  GameSettings.Clear;
-  Players.Clear;
-  Teams.Clear;
-  PreGameChatMessages.Clear;
-  InGameChatMessages.Clear;
-  Tributes.Clear;
-  FAnalyzeTime := 0;
-  Researches.Clear;
-  Units.Clear;
-  GaiaObjects.Clear;
-  PlayerObjects.Clear;
-  FMapImage.Clear;
-  FMapImageSize.cx := 0;
-  FMapImageSize.cy := 0;
-  header_len := 0;
-  next_pos := 0;
-  {$IFDEF EXTENDED}
-  FKeepStreams := False;
-  objectives_pos := 0;
-  CommentString := '';
-  {$ENDIF}
-  FAnalyzed := False;
-end;
-
-procedure TRecAnalyst.PostAnalyze;
+procedure TRecAnalyst.PostAnalyze();
 var
   Player: TPlayer;
   Team: TTeam;
@@ -2063,11 +2029,11 @@ begin
   with GameSettings do
     if not IsScenario then
     begin
-      Lines := TStringList.Create;
+      Lines := TStringList.Create();
       try
         Lines.Text := String(ObjectivesString);
         { get map }
-        if FIsMgl or (MapId = miCustom) then
+        if fIsMgl or (MapId = miCustom) then
         begin
           if (Lines.Count > 2) then
           begin
@@ -2075,7 +2041,7 @@ begin
             if (idx <> 0) then
               Map := AnsiString(Copy(AnsiString(Lines[2]), idx + Length(': '), Length(Lines[2])));
 
-            if FIsMgl then
+            if fIsMgl then
             begin
               MapFound := False;
               for i := 0 to LANGUAGES_NUM - 1 do
@@ -2113,13 +2079,13 @@ begin
         end;
         {$ENDIF}
       finally
-        Lines.Free;
+        Lines.Free();
       end;
     end;
 
-  BuildTeams;
+  BuildTeams();
 
-  { Players }
+  { PlayersType }
   idx := 0;
   FillChar(team_ary, SizeOf(team_ary), 0);
   for i := 0 to Teams.Count - 1 do
@@ -2156,7 +2122,7 @@ begin
   Player := GameSettings.Owner;
   if not Assigned(Player) then Exit;
 
-  CoopList := TStringList.Create;
+  CoopList := TStringList.Create();
   try
     for i := 0 to Players.Count - 1 do
     begin
@@ -2172,22 +2138,20 @@ begin
       GameSettings.POVEx := GameSettings.POVEx + AnsiString(Format(' (%s)', [CP]));
     end;
   finally
-    CoopList.Free;
+    CoopList.Free();
   end;
 
   { fix: player could click age advance, but game finished before reaching specific age or player has resigned }
   for i := 0 to Players.Count - 1 do
   begin
-    Player := Players[i];
-    if not Assigned(Player) then Continue;
-    with Player do
+    with Players[i] do
     begin
-    if (FeudalTime > GameSettings.PlayTime) or ((ResignTime > 0) and (FeudalTime > ResignTime)) then
-      Player.FeudalTime := 0;
-    if (CastleTime > GameSettings.PlayTime) or ((ResignTime > 0) and (CastleTime > ResignTime)) then
-      Player.CastleTime := 0;
-    if (ImperialTime > GameSettings.PlayTime) or ((ResignTime > 0) and (ImperialTime > ResignTime)) then
-      Player.ImperialTime := 0;
+      if (FeudalTime > GameSettings.PlayTime) or ((ResignTime > 0) and (FeudalTime > ResignTime)) then
+        Player.FeudalTime := 0;
+      if (CastleTime > GameSettings.PlayTime) or ((ResignTime > 0) and (CastleTime > ResignTime)) then
+        Player.CastleTime := 0;
+      if (ImperialTime > GameSettings.PlayTime) or ((ResignTime > 0) and (ImperialTime > ResignTime)) then
+        Player.ImperialTime := 0;
     end;
   end;
 
@@ -2199,21 +2163,21 @@ begin
 
     if (Player.FeudalTime <> 0) then
     begin
-      ChatMessage := TChatMessage.Create;
+      ChatMessage := TChatMessage.Create();
       ChatMessage.Time := Player.FeudalTime;
       ChatMessage.Msg := AnsiString(Format(c_feudal_age_advance, [Player.Name]));
       InGameChatMessages.Add(ChatMessage);
     end;
     if (Player.CastleTime <> 0) then
     begin
-      ChatMessage := TChatMessage.Create;
+      ChatMessage := TChatMessage.Create();
       ChatMessage.Time := Player.CastleTime;
       ChatMessage.Msg := AnsiString(Format(c_castle_age_advance, [Player.Name]));
       InGameChatMessages.Add(ChatMessage);
     end;
     if (Player.ImperialTime <> 0) then
     begin
-      ChatMessage := TChatMessage.Create;
+      ChatMessage := TChatMessage.Create();
       ChatMessage.Time := Player.ImperialTime;
       ChatMessage.Msg := AnsiString(Format(c_imperial_age_advance, [Player.Name]));
       InGameChatMessages.Add(ChatMessage);
@@ -2233,7 +2197,7 @@ begin
   if (GaiaObjects.Count > 0) then
     GaiaObjects.Sort(@GaiaObjectsCompare);
 
-  { AOC11 bug or feature? }
+  { AOC11 (and above) bug or feature? }
   if (GameSettings.GameVersion > gvAOC10c) then
     GameSettings.PopLimit := 25 * GameSettings.PopLimit;
 end;
@@ -2243,30 +2207,32 @@ var
   outStream: TMemoryStream;
   header_len: longint;
   hs: TMemoryStream;
+const
+  NO_HEADER = -15; // raw inflate
 begin
   if not FKeepStreams or not FAnalyzed then Exit;
 
-  hs := TMemoryStream.Create;
-  outStream := TMemoryStream.Create;
+  hs := TMemoryStream.Create();
+  outStream := TMemoryStream.Create();
   try
     try
-      FHeaderStream.Seek(0, soFromBeginning);
+      fHeaderStream.Seek(0, soFromBeginning);
 
       {$IFDEF FPC}
-      if (ZCompressStream2(FHeaderStream, hs, Z_DEFAULT_COMPRESSION, -15, 9, Z_DEFAULT_STRATEGY) < 0) then
+      if (ZCompressStream2(fHeaderStream, hs, Z_DEFAULT_COMPRESSION, NO_HEADER, 9, Z_DEFAULT_STRATEGY) < 0) then
         raise ERecAnalystException.Create(c_cannotcompress, RECANALYST_COMP);
       // zError(code)
       {$ELSE}
-      ZCompressStream2(FHeaderStream, hs, zcDefault, -15, 9, zsDefault);
+      ZCompressStream2(fHeaderStream, hs, zcDefault, NO_HEADER, 9, zsDefault);
       {$ENDIF}
       header_len := hs.Size + SizeOf(header_len);
-      if FIsMgx then Inc(header_len, SizeOf(next_pos));
+      if fIsMgx then Inc(header_len, SizeOf(next_pos));
       hs.Seek(0, soFromBeginning);
-      FBodyStream.Seek(0, soFromBeginning);
+      fBodyStream.Seek(0, soFromBeginning);
       outStream.Write(header_len, SizeOf(header_len));
-      if FIsMgx then outStream.Write(next_pos, SizeOf(next_pos));
+      if fIsMgx then outStream.Write(next_pos, SizeOf(next_pos));
       outStream.CopyFrom(hs, hs.Size);
-      outStream.CopyFrom(FBodyStream, FBodyStream.Size);
+      outStream.CopyFrom(fBodyStream, fBodyStream.Size);
       outStream.SaveToFile(FileName);
     except
       on ERecAnalystException do
@@ -2283,8 +2249,8 @@ begin
         raise ERecAnalystException.Create(c_unknown, RECANALYST_UNKNOWN);
     end;
   finally
-    hs.Free;
-    outStream.Free;
+    hs.Free();
+    outStream.Free();
   end;
 end;
 
@@ -2303,17 +2269,17 @@ begin
   if GameSettings.IsScenario then Exit;
   if (CommentString = Comment) then Exit;
 
-  temp := TMemoryStream.Create;
+  temp := TMemoryStream.Create();
   try
-    FHeaderStream.Seek(0, soFromBeginning);
-    if (temp.CopyFrom(FHeaderStream, objectives_pos) <> objectives_pos) then
+    fHeaderStream.Seek(0, soFromBeginning);
+    if (temp.CopyFrom(fHeaderStream, objectives_pos) <> objectives_pos) then
       Exit;
 
-    FHeaderStream.Read(objectives_len, SizeOf(objectives_len));
+    fHeaderStream.Read(objectives_len, SizeOf(objectives_len));
     if (objectives_len > 0) then
     begin
       FillChar(buff65536, SizeOf(buff65536), #0);
-      FHeaderStream.Read(buff65536[0], objectives_len);
+      fHeaderStream.Read(buff65536[0], objectives_len);
       ObjectivesString := PAnsiChar(GameSettings.ObjectivesString + CommentSeparator + Comment);
     end else
       ObjectivesString := PAnsiChar(CommentSeparator + Comment);
@@ -2325,15 +2291,15 @@ begin
 
     temp.Write(objectives_len, SizeOf(objectives_len));
     temp.Write(ObjectivesString[0], objectives_len);
-    temp.CopyFrom(FHeaderStream, FHeaderStream.Size - FHeaderStream.Position);
+    temp.CopyFrom(fHeaderStream, fHeaderStream.Size - fHeaderStream.Position);
 
     temp.Seek(0, soFromBeginning);
-    FHeaderStream.Clear;
-    FHeaderStream.CopyFrom(temp, temp.Size);
+    fHeaderStream.Clear();
+    fHeaderStream.CopyFrom(temp, temp.Size);
 
     Result := True;
   finally
-    temp.Free;
+    temp.Free();
   end;
 end;
 {$ENDIF}
@@ -2370,10 +2336,10 @@ var
   separator_len: Integer;
   map_size_x, map_size_y: Int32;
 begin
-  map_size_x := FMapWidth;
-  map_size_y := FMapHeight;
+  map_size_x := fMapWidth;
+  map_size_y := fMapHeight;
   try
-    with FHeaderStream do
+    with fHeaderStream do
     begin
       for i := 0 to Players.Count do { first is GAIA }
       begin
@@ -2417,10 +2383,10 @@ begin
           ReadFloat(civilian_pop);
           Seek(8);
           ReadFloat(military_pop);
-          if FIsMgx then Seek(629) else Seek(593);
+          if fIsMgx then Seek(629) else Seek(593);
           ReadFloat(init_camera_pos_x);
           ReadFloat(init_camera_pos_y);
-          if FIsMgx then Seek(9) else Seek(5);
+          if fIsMgx then Seek(9) else Seek(5);
           ReadChar(civilization);
           { sometimes(?) civilization is zero in scenarios when the first player is briton (only? always? rule?) }
           if (civilization = 0) then Inc(civilization);
@@ -2455,10 +2421,10 @@ begin
           if (GameSettings.GameVersion = gvAOKTrial) or
             (GameSettings.GameVersion = gvAOCTrial) then Seek(4);
           Seek(num_player + 70);
-          if FIsMgx then Seek(792) else Seek(756);
+          if fIsMgx then Seek(792) else Seek(756);
         end;
 
-        if FIsMgx then Seek(41249) else Seek(34277);
+        if fIsMgx then Seek(41249) else Seek(34277);
         Seek(map_size_x * map_size_y);
 
         { Getting exist_object_pos }
@@ -2489,7 +2455,7 @@ begin
                       Seek(19);
                       ReadFloat(pos_x);
                       ReadFloat(pos_y);
-                      GO := TGaiaObject.Create;
+                      GO := TGaiaObject.Create();
                       GO.Id := unit_id;
                       GO.Position.X := Round(pos_x);
                       GO.Position.Y := Round(pos_y);
@@ -2498,12 +2464,12 @@ begin
                     end;
                 end;
                 Seek(63 - SizeOf(object_type) - SizeOf(owner) - SizeOf(unit_id));
-                if FIsMgl then Seek(1);
+                if fIsMgl then Seek(1);
               end;
             20:
               begin
                 // not guaranteed
-                if FIsMgx then
+                if fIsMgx then
                 begin
                   Seek(59);
                   ReadChar(b);
@@ -2515,7 +2481,7 @@ begin
               end;
             30:
               begin
-                if FIsMgx then
+                if fIsMgx then
                 begin
                   Seek(59);
                   ReadChar(b);
@@ -2548,7 +2514,7 @@ begin
                       Seek(19);
                       ReadFloat(pos_x);
                       ReadFloat(pos_y);
-                      GO := TGaiaObject.Create;
+                      GO := TGaiaObject.Create();
                       GO.Id := unit_id;
                       GO.Position.X := Round(pos_x);
                       GO.Position.Y := Round(pos_y);
@@ -2561,14 +2527,14 @@ begin
                   Seek(19);
                   ReadFloat(pos_x);
                   ReadFloat(pos_y);
-                  UO := TUnitObject.Create;
+                  UO := TUnitObject.Create();
                   UO.Id := unit_id;
-                  UO.Owner := owner;
+                  UO.Owner := Players.GetPlayerByIndex(owner);
                   UO.Position.X := Round(pos_x);
                   UO.Position.Y := Round(pos_y);
                   PlayerObjects.Add(UO);
                 end;
-                if FIsMgx then
+                if fIsMgx then
                 begin
                   separator_ptr := @object_end_separator;
                   separator_len := SizeOf(object_end_separator);
@@ -2594,14 +2560,14 @@ begin
                   Seek(19);
                   ReadFloat(pos_x);
                   ReadFloat(pos_y);
-                  UO := TUnitObject.Create;
+                  UO := TUnitObject.Create();
                   UO.Id := unit_id;
-                  UO.Owner := owner;
+                  UO.Owner := Players.GetPlayerByIndex(owner);
                   UO.Position.X := Round(pos_x);
                   UO.Position.Y := Round(pos_y);
                   PlayerObjects.Add(UO);
                 end;
-                if FIsMgx then
+                if fIsMgx then
                 begin
                   separator_ptr := @object_end_separator;
                   separator_len := SizeOf(object_end_separator);
@@ -2620,7 +2586,7 @@ begin
                 end;
                 if (j > 1000) then Exit;
                 Seek(126);
-                if FIsMgx then Seek(1);
+                if fIsMgx then Seek(1);
               end;
             00:
               begin
@@ -2629,7 +2595,8 @@ begin
                 ReadBuffer(buff256, SizeOf(player_info_end_separator));
                 Seek(-SizeOf(player_info_end_separator));
 
-                if CompareMem(@buff256, @player_info_end_separator, SizeOf(player_info_end_separator)) then
+                if CompareMem(@buff256, @player_info_end_separator,
+                  SizeOf(player_info_end_separator)) then
                 begin
                   Seek(SizeOf(player_info_end_separator));
                   Break;
@@ -2645,7 +2612,7 @@ begin
     end;
   except
     on E: Exception do
-      raise ERecAnalystException.Create(c_playerinforeaderror, RECANALYST_READPLAYER);
+      raise ERecAnalystException.Create(RECANALYST_READPLAYER);
   end;
 end;
 
@@ -2656,96 +2623,6 @@ begin
   except
     Result := '';
   end;
-end;
-
-function UnitsCompare(Item1, Item2: Pointer): Integer;
-begin
-  if (TTrainedUnit(Item1).Count < TTrainedUnit(Item2).Count) then
-    Result := 1
-  else if (TTrainedUnit(Item1).Count > TTrainedUnit(Item2).Count) then
-    Result := -1
-  else Result := 0;
-end;
-
-function ResearchesCompare(Item1, Item2: Pointer): Integer;
-begin
-  if (TResearch(Item1).Time < TResearch(Item2).Time) then
-    Result := -1
-  else if (TResearch(Item1).Time > TResearch(Item2).Time) then
-    Result := 1
-  else Result := 0;
-end;
-
-function ChatCompare(Item1, Item2: Pointer): Integer;
-begin
-  if (TChatMessage(Item1).Time < TChatMessage(Item2).Time) then
-    Result := -1
-  else if (TChatMessage(Item1).Time > TChatMessage(Item2).Time) then
-    Result := 1
-  else Result := 0;
-end;
-
-function GaiaObjectsCompare(Item1, Item2: Pointer): Integer;
-begin
-  if (TGaiaObject(Item1).Id = uiRelic) and (TGaiaObject(Item2).Id <> uiRelic) then
-    Result := 1
-  else if (InArray(CliffsAry, TGaiaObject(Item1).Id) <> -1)
-      and (InArray(CliffsAry, TGaiaObject(Item2).Id) = -1) then
-    Result := -1
-  else if (TGaiaObject(Item2).Id = uiRelic) and (TGaiaObject(Item1).Id <> uiRelic) then
-    Result := -1
-  else if (InArray(CliffsAry, TGaiaObject(Item2).Id) <> -1)
-      and (InArray(CliffsAry, TGaiaObject(Item1).Id) = -1) then
-    Result := 1
-  else Result := 0;
-end;
-
-function ItemById(const Ary: array of TResearchRec; const Id: Integer): Integer;
-var
-  i: Integer;
-begin
-  Result := -1;
-  for i := Low(Ary) to High(Ary) do
-  begin
-    if (Ary[i].Id = Id) then
-    begin
-      Result := i;
-      Exit;
-    end;
-  end;
-end;
-
-function ResearchById(const Id: Integer): Integer;
-begin
-  Result := ItemById(RESEARCHES, Id);
-end;
-
-function UnitById(const Id: Integer): Integer;
-begin
-  Result := ItemById(UNITS, Id);
-end;
-
-function BuildingById(const Id: Integer): Integer;
-begin
-  Result := ItemById(BUILDINGS, Id);
-end;
-
-function MapById(const Id: Integer): Integer;
-begin
-  Result := ItemById(MAPS, Id);
-end;
-
-function InArray(const Ary: array of Integer; Value: Integer): Integer;
-var
-  i: Integer;
-begin
-  Result := -1;
-  for i := Low(Ary) to High(Ary) do
-    if (Ary[i] = Value) then
-    begin
-      Result := i;
-      Break;
-    end;
 end;
 
 end.

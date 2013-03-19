@@ -4,18 +4,18 @@
  *
  * Copyright (c) 2009-2013 biegleux <biegleux[at]gmail[dot]com>
  *
- * This program is free software; you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 3 of the License, or
- * (at your option) any later version.
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 3 of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful,
+ * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, see <http://www.gnu.org/licenses>.
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, see <http://www.gnu.org/licenses>.
  *}
 unit uRecAnalystBase;
 
@@ -44,17 +44,29 @@ function ZDecompressStream2(inStream, outStream: TStream; windowBits: Integer): 
 function ZCompressStream2(inStream, outStream: TStream; level, windowBits,
     memLevel, strategy : Longint): Integer;
 {$ENDIF}
+function UnitsCompare(Item1, Item2: Pointer): Integer;
+function ResearchesCompare(Item1, Item2: Pointer): Integer;
+function ChatCompare(Item1, Item2: Pointer): Integer;
+function GaiaObjectsCompare(Item1, Item2: Pointer): Integer;
+function ResearchById(const Id: Integer): Integer;
+function UnitById(const Id: Integer): Integer;
+function BuildingById(const Id: Integer): Integer;
+function MapById(const Id: Integer): Integer;
+procedure FixUnitTypeId(var unit_type_id: Word);
+procedure FixBuildingTypeId(var building_type_id: Word);
 // see Remarks at http://msdn.microsoft.com/en-us/library/windows/desktop/ms534077%28v=vs.85%29.aspx
-procedure InitializeGdiplus;
-procedure FinalizeGdiplus;
+procedure InitializeGdiplus();
+procedure FinalizeGdiplus();
 
 implementation
 
 uses
-  Windows, Math, GDIPAPI;
+  Windows, Math, GDIPAPI, uRecAnalyst, uRecAnalystConsts;
 
 var
   gdiplusToken: ULONG;
+
+function InArray(const Ary: array of Integer; Value: Integer): Integer; forward;
 
 function StrLCopyA(Dest: PAnsiChar; const Source: PAnsiChar; MaxLen: Integer): PAnsiChar;
 begin
@@ -269,22 +281,131 @@ begin
 end;
 {$ENDIF}
 
-procedure InitializeGdiplus;
+procedure InitializeGdiplus();
 var
   StartupInput: TGDIPlusStartupInput;
 begin
   StartupInput.DebugEventCallback := nil;
   StartupInput.SuppressBackgroundThread := False;
-  StartupInput.SuppressExternalCodecs   := False;
+  StartupInput.SuppressExternalCodecs := False;
   StartupInput.GdiplusVersion := 1;
   // Initialize GDI+
   GdiplusStartup(gdiplusToken, @StartupInput, nil);
 end;
 
-procedure FinalizeGdiplus;
+procedure FinalizeGdiplus();
 begin
   // Close GDI +
   GdiplusShutdown(gdiplusToken);
 end;
 
+function UnitsCompare(Item1, Item2: Pointer): Integer;
+begin
+  if (TTrainedUnit(Item1).Count < TTrainedUnit(Item2).Count) then
+    Result := 1
+  else if (TTrainedUnit(Item1).Count > TTrainedUnit(Item2).Count) then
+    Result := -1
+  else Result := 0;
+end;
+
+function ResearchesCompare(Item1, Item2: Pointer): Integer;
+begin
+  if (TResearch(Item1).Time < TResearch(Item2).Time) then
+    Result := -1
+  else if (TResearch(Item1).Time > TResearch(Item2).Time) then
+    Result := 1
+  else Result := 0;
+end;
+
+function ChatCompare(Item1, Item2: Pointer): Integer;
+begin
+  if (TChatMessage(Item1).Time < TChatMessage(Item2).Time) then
+    Result := -1
+  else if (TChatMessage(Item1).Time > TChatMessage(Item2).Time) then
+    Result := 1
+  else Result := 0;
+end;
+
+function GaiaObjectsCompare(Item1, Item2: Pointer): Integer;
+begin
+  if (TGaiaObject(Item1).Id = uiRelic) and (TGaiaObject(Item2).Id <> uiRelic) then
+    Result := 1
+  else if (InArray(CliffsAry, TGaiaObject(Item1).Id) <> -1)
+      and (InArray(CliffsAry, TGaiaObject(Item2).Id) = -1) then
+    Result := -1
+  else if (TGaiaObject(Item2).Id = uiRelic) and (TGaiaObject(Item1).Id <> uiRelic) then
+    Result := -1
+  else if (InArray(CliffsAry, TGaiaObject(Item2).Id) <> -1)
+      and (InArray(CliffsAry, TGaiaObject(Item1).Id) = -1) then
+    Result := 1
+  else Result := 0;
+end;
+
+function ItemById(const Ary: array of TResearchRec; const Id: Integer): Integer;
+var
+  i: Integer;
+begin
+  Result := -1;
+  for i := Low(Ary) to High(Ary) do
+  begin
+    if (Ary[i].Id = Id) then
+    begin
+      Result := i;
+      Exit;
+    end;
+  end;
+end;
+
+function ResearchById(const Id: Integer): Integer;
+begin
+  Result := ItemById(RESEARCHES, Id);
+end;
+
+function UnitById(const Id: Integer): Integer;
+begin
+  Result := ItemById(UNITS, Id);
+end;
+
+function BuildingById(const Id: Integer): Integer;
+begin
+  Result := ItemById(BUILDINGS, Id);
+end;
+
+function MapById(const Id: Integer): Integer;
+begin
+  Result := ItemById(MAPS, Id);
+end;
+
+function InArray(const Ary: array of Integer; Value: Integer): Integer;
+var
+  i: Integer;
+begin
+  Result := -1;
+  for i := Low(Ary) to High(Ary) do
+    if (Ary[i] = Value) then
+    begin
+      Result := i;
+      Break;
+    end;
+end;
+
+procedure FixUnitTypeId(var unit_type_id: Word);
+begin
+  if (unit_type_id = uiHuskarl2) then unit_type_id := uiHuskarl;
+  if (unit_type_id = uiEliteHuskarl2) then unit_type_id := uiEliteHuskarl;
+  if (unit_type_id = uiTarkan2) then unit_type_id := uiTarkan;
+  if (unit_type_id = uiEliteTarkan2) then unit_type_id := uiEliteTarkan;
+  if (unit_type_id = uiCondottiero2) then unit_type_id := uiCondottiero;
+  if (unit_type_id = uiEagleWarrior2) then unit_type_id := uiEagleWarrior;
+end;
+
+procedure FixBuildingTypeId(var building_type_id: Word);
+begin
+  if (InArray(biGates, building_type_id) <> -1) then
+    building_type_id := biGate
+  else if (InArray(biPalisadeGates, building_type_id) <> -1) then
+    building_type_id := biPalisadeGate;
+end;
+
 end.
+
