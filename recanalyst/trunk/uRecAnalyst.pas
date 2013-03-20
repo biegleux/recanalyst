@@ -77,6 +77,7 @@ type
     CastleTime: Integer;
     ImperialTime: Integer;
     ResignTime: Integer;
+    DisconnectTime: Integer;
     Buildings: TBuildingList;
     InitialState: TInitialState;
     constructor Create();
@@ -386,6 +387,7 @@ resourcestring
   c_castle_age_advance = '%s advanced to Castle Age';
   c_imperial_age_advance = '%s advanced to Imperial Age';
   c_resigned = '%s resigned';
+  c_disconnected = '%s disconnected';
 
 const
   ErrorMessages: array[{$IFDEF EXTENDED}RECANALYST_COMP{$ELSE}
@@ -585,6 +587,7 @@ begin
   CastleTime := 0;
   ImperialTime := 0;
   ResignTime := 0;
+  DisconnectTime := 0;
   Buildings := TBuildingList.Create();
   InitialState := TInitialState.Create();
 end;
@@ -1425,7 +1428,7 @@ var
   m_body_len, i, idx: Integer;
   od_type, command, chat_len, time: Int32;
   unknown, length: Int32;
-  cmd, player_number, player_index, ver: Byte;
+  cmd, player_number, player_index, ver, disconnected: Byte;
   buff256: array[0..MAXBYTE] of AnsiChar;
   Player, PlayerFrom, PlayerTo: TPlayer;
   player_id_from, player_id_to, resource_id: Byte;
@@ -1485,7 +1488,6 @@ begin
               { Chat }
               ReadInt32(chat_len);
               ReadBuffer(buff256, chat_len);
-
               if (buff256[0] = '@') and (buff256[1] = '#') and (buff256[2] >= '1') and (buff256[2] <= '8') then
               begin
                 buff256[chat_len] := #0;
@@ -1526,19 +1528,30 @@ begin
                   Seek(1);
                   ReadChar(player_index);
                   ReadChar(player_number);
+                  ReadChar(disconnected);
                   if (player_number in [1..Players.Count]) then
                   begin
                     Player := Players[player_number - 1];
-                    if Assigned(Player) and (Player.ResignTime = 0) then
+                    if Assigned(Player) then
                     begin
-                      Player.ResignTime := time_cnt;
-                      ChatMessage := TChatMessage.Create();
-                      ChatMessage.Time := Player.ResignTime;
-                      ChatMessage.Msg := AnsiString(Format(c_resigned, [Player.Name]));
-                      InGameChatMessages.Add(ChatMessage);
+                      if (disconnected = 1) and (Player.DisconnectTime = 0) then
+                      begin
+                        ChatMessage := TChatMessage.Create();
+                        ChatMessage.Time := time_cnt;
+                        ChatMessage.Msg := AnsiString(Format(c_disconnected, [Player.Name]));
+                        Player.DisconnectTime := time_cnt;
+                        InGameChatMessages.Add(ChatMessage);
+                      end else if (disconnected <> 1) and (Player.ResignTime = 0) then
+                      begin
+                        ChatMessage := TChatMessage.Create();
+                        ChatMessage.Time := time_cnt;
+                        ChatMessage.Msg := AnsiString(Format(c_resigned, [Player.Name]));
+                        Player.ResignTime := time_cnt;
+                        InGameChatMessages.Add(ChatMessage);
+                      end;
                     end;
                   end;
-                  Seek(length - 3);
+                  Seek(length - 4);
                 end;
               $65:
                 begin
@@ -1988,7 +2001,7 @@ procedure TRecAnalyst.PostAnalyze();
 var
   Player: TPlayer;
   Team: TTeam;
-  i, j, idx: Integer;
+  i, j, idx, EndTime: Integer;
   team_ary: array[0..7] of Integer;
   Lines, CoopList: TStringList;
   MapFound: Boolean;
@@ -2115,11 +2128,12 @@ begin
   begin
     with Players[i] do
     begin
-      if (FeudalTime > GameSettings.PlayTime) or ((ResignTime > 0) and (FeudalTime > ResignTime)) then
+      if (ResignTime < DisconnectTime) then EndTime := ResignTime else EndTime := DisconnectTime;
+      if (FeudalTime > GameSettings.PlayTime) or ((EndTime > 0) and (FeudalTime > EndTime)) then
         Player.FeudalTime := 0;
-      if (CastleTime > GameSettings.PlayTime) or ((ResignTime > 0) and (CastleTime > ResignTime)) then
+      if (CastleTime > GameSettings.PlayTime) or ((EndTime > 0) and (CastleTime > EndTime)) then
         Player.CastleTime := 0;
-      if (ImperialTime > GameSettings.PlayTime) or ((ResignTime > 0) and (ImperialTime > ResignTime)) then
+      if (ImperialTime > GameSettings.PlayTime) or ((EndTime > 0) and (ImperialTime > EndTime)) then
         Player.ImperialTime := 0;
     end;
   end;
