@@ -26,7 +26,7 @@ unit uRecAnalystBase;
 interface
 
 uses
-  Types;
+  Windows;
 
 // Types
 {$IFNDEF FPC}
@@ -55,16 +55,13 @@ function MapById(const Id: Integer): Integer;
 procedure FixUnitTypeId(var unit_type_id: Word);
 procedure FixBuildingTypeId(var building_type_id: Word);
 // see Remarks at http://msdn.microsoft.com/en-us/library/windows/desktop/ms534077%28v=vs.85%29.aspx
-procedure InitializeGdiplus();
-procedure FinalizeGdiplus();
+procedure InitializeGdiplus(var gdiplusToken: ULONG);
+procedure FinalizeGdiplus(var gdiplusToken: ULONG);
 
 implementation
 
 uses
-  Windows, Math, GDIPAPI, uRecAnalyst, uRecAnalystConsts;
-
-var
-  gdiplusToken: ULONG;
+  Math, GDIPAPI, uRecAnalyst, uRecAnalystConsts;
 
 function InArray(const Ary: array of Integer; Value: Integer): Integer; forward;
 
@@ -281,7 +278,7 @@ begin
 end;
 {$ENDIF}
 
-procedure InitializeGdiplus();
+procedure InitializeGdiplus(var gdiplusToken: ULONG);
 var
   StartupInput: TGDIPlusStartupInput;
 begin
@@ -293,7 +290,7 @@ begin
   GdiplusStartup(gdiplusToken, @StartupInput, nil);
 end;
 
-procedure FinalizeGdiplus();
+procedure FinalizeGdiplus(var gdiplusToken: ULONG);
 begin
   // Close GDI +
   GdiplusShutdown(gdiplusToken);
