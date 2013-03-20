@@ -26,6 +26,8 @@ uses
 
 type
   TMemStream = class(TMemoryStream)
+  private
+    function Find(Needle: Pointer; SizeOfNeedle: Integer): Longint; overload;
   public
     function Seek(Offset: Longint): Longint; overload;
     procedure ReadInt32(var Buffer: Int32);
@@ -34,9 +36,15 @@ type
     procedure ReadFloat(var Buffer: Single);
     procedure ReadBool(var Buffer: Boolean);
     procedure ReadString(var Buffer: array of AnsiChar; Len: Integer = 4);
+    function Find(const Needle256: array of AnsiChar): Longint; overload;
+    function Find(const Needle256: array of Byte): Longint; overload;
+    function FindReverse(const Needle256: array of AnsiChar): Longint;
   end;
 
 implementation
+
+uses
+  Windows, SysUtils;
 
 function TMemStream.Seek(Offset: Longint): Longint;
 begin
@@ -88,6 +96,50 @@ begin
       Buffer[iLen] := #0;
     end;
   end;
+end;
+
+function TMemStream.Find(Needle: Pointer; SizeOfNeedle: Integer): Longint;
+var
+  buff256: array[0..MAXBYTE] of AnsiChar;
+begin
+  Result := -1;
+  repeat
+    ReadBuffer(buff256, SizeOfNeedle);
+    if CompareMem(@buff256, Needle, SizeOfNeedle) then
+    begin
+      Result := Position;
+      Break;
+    end;
+    Seek(-SizeOfNeedle + 1);
+  until (Position >= Size);
+end;
+
+function TMemStream.Find(const Needle256: array of AnsiChar): Longint;
+begin
+  Result := Find(@Needle256, SizeOf(Needle256));
+end;
+
+function TMemStream.Find(const Needle256: array of Byte): Longint;
+begin
+  Result := Find(@Needle256, SizeOf(Needle256));
+end;
+
+function TMemStream.FindReverse(const Needle256: array of AnsiChar): Longint;
+var
+  buff256: array[0..MAXBYTE] of AnsiChar;
+  needle_size: Integer;
+begin
+  Result := -1;
+  needle_size := SizeOf(Needle256);
+  repeat
+    ReadBuffer(buff256, needle_size);
+    if CompareMem(@buff256, @Needle256, needle_size) then
+    begin
+      Result := Position;
+      Break;
+    end;
+    Seek(-(needle_size + 1));
+  until (Position < 0);
 end;
 
 end.

@@ -294,8 +294,8 @@ type
 
     GaiaObjects: TObjectList;
     PlayerObjects: TObjectList;
-    FAnalyzed: Boolean;
-    {$IFDEF EXTENDED}FKeepStreams: Boolean;{$ENDIF}
+    fAnalyzed: Boolean;
+    {$IFDEF EXTENDED}fKeepStreams: Boolean;{$ENDIF}
     fMapImage: TMemoryStream;
     fMapImageSize: TSize;
 
@@ -334,7 +334,7 @@ type
     property AnalyzeTime: Integer read fAnalyzeTime;
     property Analyzed: Boolean read fAnalyzed;
     {$IFDEF EXTENDED}
-    property KeepStreams: Boolean read FKeepStreams write FKeepStreams;
+    property KeepStreams: Boolean read fKeepStreams write fKeepStreams;
     {$ENDIF}
   end;
 
@@ -1092,7 +1092,6 @@ var
   ChatMessage: TChatMessage;
   num_condition: Int32;
   team_indexes: array[0..7] of Byte;
-  separator_ptr: Pointer;
   unknown25, victory_condition: Int32;
   is_timelimit: Byte;
   time_limit: Single;
@@ -1139,51 +1138,20 @@ begin
     end;
     { getting Trigger_info position }
     Seek(-SizeOf(constant2), soFromEnd);
-    trigger_info_pos := 0;
-    repeat
-      ReadBuffer(buff, SizeOf(constant2));
-      if CompareMem(@buff, @constant2, SizeOf(constant2)) then
-      begin
-        trigger_info_pos := Position;
-        Break;
-      end;
-      Seek(-(SizeOf(constant2) + 1));
-    until (Position < 0);
-
-    if (trigger_info_pos = 0) then
+    trigger_info_pos := FindReverse(constant2);
+    if (trigger_info_pos = -1) then
       raise ERecAnalystException.Create(RECANALYST_NOTRIGG);
-
     { getting Game_settings position }
-    game_settings_pos := 0;
-    repeat
-      ReadBuffer(buff, SizeOf(separator));
-      if CompareMem(@buff, @separator, SizeOf(separator)) then
-      begin
-        game_settings_pos := Position;
-        Break;
-      end;
-      Seek(-(SizeOf(separator) + 1));
-    until (Position < 0);
-
-    if (game_settings_pos = 0) then
+    game_settings_pos := FindReverse(separator);
+    if (game_settings_pos = -1) then
       raise ERecAnalystException.Create(RECANALYST_NOGAMESETS);
-
     { getting Scenario_header position }
-    scenario_header_pos := 0;
     if fIsMgx then
-      separator_ptr := @scenario_constant
+      scenario_header_pos := FindReverse(scenario_constant)
     else
-      separator_ptr := @aok_separator;
-    { note: SizeOf(scenario_constant) = SizeOf(aok_separator) }
-    repeat
-      ReadBuffer(buff, SizeOf(scenario_constant));
-      if CompareMem(@buff, separator_ptr, SizeOf(scenario_constant)) then
-      begin
-        scenario_header_pos := Position - SizeOf(scenario_constant) - SizeOf(Int32) {next_unit_id};
-        Break;
-      end;
-      Seek(-(SizeOf(scenario_constant) + 1));
-    until (Position < 0);
+      scenario_header_pos := FindReverse(aok_separator);
+    if (scenario_header_pos <> -1) then
+      scenario_header_pos := scenario_header_pos - SizeOf(scenario_constant) - SizeOf(Int32) {next_unit_id};
     { getting Game_Settings data }
     { skip negative[2] }
     Seek(game_settings_pos + 8, soFromBeginning);
@@ -1429,7 +1397,7 @@ begin
     { getting Player_info }
     ReadPlayerInfoBlock(num_player);
     { getting objectives or instructions }
-    if (scenario_header_pos > 0) then
+    if (scenario_header_pos > -1) then
     begin
       Seek(scenario_header_pos + 4433, soFromBeginning);
       { original scenario file name }
@@ -1768,7 +1736,7 @@ begin
     fAnalyzeTime := GetTickCount() - StartTime;
     Result := True;
   finally
-    {$IFDEF EXTENDED}if not FKeepStreams then{$ENDIF}
+    {$IFDEF EXTENDED}if not fKeepStreams then{$ENDIF}
     begin
       fHeaderStream.Clear();
       fBodyStream.Clear();
@@ -1848,15 +1816,16 @@ var
   Png: TGPBitmap;
   Stream: IStream;
   NomadLikeMap: Boolean;
+  gdiplusToken: ULONG;
 begin
   Result := fMapImage;
   fMapImage.Position := 0;
   if (fMapImage.Size > 0) and (Width = fMapImageSize.cx) and (Height = fMapImageSize.cy) then
     Exit;
-  if not FAnalyzed or not Assigned(fMapData) then
+  if not fAnalyzed or not Assigned(fMapData) then
     Exit;
 
-  InitializeGdiplus();
+  InitializeGdiplus(gdiplusToken);
 
   Bmp := TGPBitmap.Create(fMapWidth, fMapHeight, PixelFormat24bppRGB);
   Graphics := TGPGraphics.Create(Bmp);
@@ -2011,7 +1980,7 @@ begin
   finally
     Bmp.Free();
     Graphics.Free();
-    FinalizeGdiplus();
+    FinalizeGdiplus(gdiplusToken);
   end;
 end;
 
@@ -2210,7 +2179,7 @@ var
 const
   NO_HEADER = -15; // raw inflate
 begin
-  if not FKeepStreams or not FAnalyzed then Exit;
+  if not fKeepStreams or not fAnalyzed then Exit;
 
   hs := TMemoryStream.Create();
   outStream := TMemoryStream.Create();
@@ -2264,7 +2233,7 @@ const
   CommentSeparator = #$0A#$0A;
 begin
   Result := False;
-  if not FAnalyzed or not FKeepStreams or (objectives_pos = 0) then Exit;
+  if not fAnalyzed or not fKeepStreams or (objectives_pos = 0) then Exit;
   { scenarios are not supported for now }
   if GameSettings.IsScenario then Exit;
   if (CommentString = Comment) then Exit;
@@ -2318,7 +2287,7 @@ const
   objects_mid_separator_gaia: array[0..9] of AnsiChar = (
     #$00, #$0B, #$00, #$40, #$00, #$00, #$00, #$20, #$00, #$00);
 var
-  i, j: Integer;
+  i: Integer;
   exist_object_pos: Int32;
   buff256: array[0..MAXBYTE] of AnsiChar;
   object_type: Byte;
@@ -2332,8 +2301,7 @@ var
   civilization, player_color: Byte;
   GO: TGaiaObject;
   UO: TUnitObject;
-  separator_ptr: Pointer;
-  separator_len: Integer;
+  separator_pos: Longint;
   map_size_x, map_size_y: Int32;
 begin
   map_size_x := fMapWidth;
@@ -2349,7 +2317,6 @@ begin
           Player := Players[i - 1];
           { skip cooping player, she/he has no data in Player_info }
           P := Players.GetPlayerByIndex(Player.Index);
-
           if (Assigned(P)) and (P <> Player) and (P.CivId <> cNone) then
           begin
             Player.CivId := P.CivId;
@@ -2362,11 +2329,9 @@ begin
           if (GameSettings.GameVersion = gvAOKTrial)
             or (GameSettings.GameVersion = gvAOCTrial) then Seek(4);
           Seek(num_player + 43);
-
           { skip player name }
           ReadWord(player_name_len);
           Seek(player_name_len + 6);
-
           { Civ_header }
           ReadFloat(food);
           ReadFloat(wood);
@@ -2393,7 +2358,6 @@ begin
           { skip unknown9[3] }
           Seek(3);
           ReadChar(player_color);
-
           with Player do
           begin
             CivId := TCivilization(civilization);
@@ -2428,18 +2392,8 @@ begin
         Seek(map_size_x * map_size_y);
 
         { Getting exist_object_pos }
-        exist_object_pos := 0;
-        repeat
-          ReadBuffer(buff256, SizeOf(exist_object_separator));
-          if CompareMem(@buff256, @exist_object_separator, SizeOf(exist_object_separator)) then
-          begin
-            exist_object_pos := Position;
-            Break;
-          end;
-          Seek(-SizeOf(exist_object_separator) + 1);
-        until (Position >= Size);
-
-        if (exist_object_pos = 0) then Exit;
+        exist_object_pos := Find(exist_object_separator);
+        if (exist_object_pos = -1) then Exit;
 
         while True do
         begin
@@ -2535,23 +2489,10 @@ begin
                   PlayerObjects.Add(UO);
                 end;
                 if fIsMgx then
-                begin
-                  separator_ptr := @object_end_separator;
-                  separator_len := SizeOf(object_end_separator);
-                end else
-                begin
-                  separator_ptr := @aok_object_end_separator;
-                  separator_len := SizeOf(aok_object_end_separator);
-                end;
-                { search up to 1000 bytes }
-                for j := 0 to 1000 do
-                begin
-                  ReadBuffer(buff256, separator_len);
-                  if CompareMem(@buff256, separator_ptr, separator_len) then
-                    Break;
-                  Seek(-separator_len + 1);
-                end;
-                if (j > 1000) then Exit;
+                  separator_pos := Find(object_end_separator)
+                else
+                  separator_pos := Find(aok_object_end_separator);
+                if (separator_pos = -1) then Exit;
               end;
             80:
               begin
@@ -2568,23 +2509,10 @@ begin
                   PlayerObjects.Add(UO);
                 end;
                 if fIsMgx then
-                begin
-                  separator_ptr := @object_end_separator;
-                  separator_len := SizeOf(object_end_separator);
-                end else
-                begin
-                  separator_ptr := @aok_object_end_separator;
-                  separator_len := SizeOf(aok_object_end_separator);
-                end;
-                { search up to 1000 bytes }
-                for j := 0 to 1000 do
-                begin
-                  ReadBuffer(buff256, separator_len);
-                  if CompareMem(@buff256, separator_ptr, separator_len) then
-                    Break;
-                  Seek(-separator_len + 1);
-                end;
-                if (j > 1000) then Exit;
+                  separator_pos := Find(object_end_separator)
+                else
+                  separator_pos := Find(aok_object_end_separator);
+                if (separator_pos = -1) then Exit;
                 Seek(126);
                 if fIsMgx then Seek(1);
               end;
