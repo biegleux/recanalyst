@@ -89,6 +89,7 @@ type
     dwCastleTime: DWORD;
     dwImperialTime: DWORD;
     dwResignTime: DWORD;
+    dwDisconnectTime: DWORD;
     lpInitialState: PInitialStateStruct; // pointer to InitialState struct data
   end;
 
@@ -121,7 +122,7 @@ type
     bIsFFA: BOOL;
     dwVersion: DWORD;
     szMap: array[0..MAXWORD] of AnsiChar;
-    szPlayers: array[0..MAXCHAR] of AnsiChar;
+    szPlayersType: array[0..MAXCHAR] of AnsiChar;
     szPOV: array[0..MAXBYTE] of AnsiChar;
 //    szPOVEx
     szGameType: array[0..MAXBYTE] of AnsiChar;
@@ -139,8 +140,8 @@ type
   PChatMessageStruct = ^TChatMessageStruct;
   TChatMessageStruct = record
     dwTime: DWORD;  // always zero for pre-game chat messages
-    dwPlayerId: DWORD; // zero for players who left the game before its start (in pre-game chat),
-                       // zero for age advances messages in in-game chat
+    dwPlayerId: DWORD; // zero for players who left the game before its start in pre-game chat,
+                       // zero for age advances, resign and disconnect messages in in-game chat
     szMessage: array[0..MAXBYTE] of AnsiChar;
   end;
 
@@ -233,7 +234,7 @@ const
   RECANALYST_COMP        = -13;
   {$ENDIF}
   { general error codes }
-  GEN_BASE = {$IFDEF EXTENDED}RECANALYST_COMP - 1{$ELSE}RECANALYST_READPLAYER{$ENDIF};
+  GEN_BASE = {$IFDEF EXTENDED}RECANALYST_COMP - 1{$ELSE}RECANALYST_READPLAYER - 1{$ENDIF};
   RECANALYST_INVALIDPTR  = GEN_BASE;
   RECANALYST_FREEOBJ     = GEN_BASE - 1;
   RECANALYST_NOCALLBACK  = GEN_BASE - 2;
@@ -255,7 +256,7 @@ const
   {$ENDIF}
 
 var
-  recanalyst_version: PAnsiChar = '1.2';
+  recanalyst_version: PAnsiChar = '1.3';
 
 const
   ErrorMessages: array[{$IFDEF EXTENDED}RECANALYST_SETCOMM{$ELSE}
@@ -291,7 +292,7 @@ function recanalyst_create(): PRecAnalyst; stdcall; forward;
   recanalyst_free() must be a recanalyst object obtained from recanalyst_create(). }
 function recanalyst_free(lpRecAnalyst: PRecAnalyst): Integer; stdcall; forward;
 
-{ This routine analyses a file set by the lpFileName parameter. recanalyst_analyze()
+{ This routine analyzes a file set by the lpFileName parameter. recanalyst_analyze()
   can be called repeatedly on the recanalyst object.
 
   lpFileName pointer to ANSI filename string. }
@@ -424,7 +425,7 @@ function recanalyst_getcomment(lpRecAnalyst: PRecAnalyst;
 function recanalyst_create(): PRecAnalyst; stdcall;
 begin
   try
-    Result := TRecAnalyst.Create;
+    Result := TRecAnalyst.Create();
   except
     Result := nil;
   end;
@@ -439,7 +440,7 @@ begin
   end;
 
   try
-    TRecAnalyst(lpRecAnalyst).Free;
+    TRecAnalyst(lpRecAnalyst).Free();
     Result := RECANALYST_OK;
   except
     Result := RECANALYST_FREEOBJ;
@@ -451,7 +452,7 @@ function recanalyst_analyze(lpRecAnalyst: PRecAnalyst;
 var
   RecAnalyst: TRecAnalyst;
 begin
-  if not Assigned(lpRecAnalyst) or not Assigned(lpFileName) then
+  if not Assigned(lpRecAnalyst) then
   begin
     Result := RECANALYST_INVALIDPTR;
     Exit;
@@ -459,11 +460,10 @@ begin
 
   try
     RecAnalyst := TRecAnalyst(lpRecAnalyst);
-    RecAnalyst.Reset;
+    RecAnalyst.Reset();
     RecAnalyst.FileName := String(AnsiString(lpFileName));
     {$IFDEF EXTENDED}RecAnalyst.KeepStreams := True;{$ENDIF}
-    RecAnalyst.Analyze;
-
+    RecAnalyst.Analyze();
     Result := RECANALYST_OK;
   except
     on E: ERecAnalystException do
@@ -520,7 +520,7 @@ begin
       bIsFFA := IsFFA;
       dwVersion := Ord(GameVersion);
       CpyMem(szMap, Map);
-      CpyMem(szPlayers, PlayersType);
+      CpyMem(szPlayersType, PlayersType);
       CpyMem(szPOV, POV);
       CpyMem(szGameType, sGameType);
       CpyMem(szMapStyle, sMapStyle);
@@ -613,6 +613,7 @@ begin
         dwCastleTime := CastleTime;
         dwImperialTime := ImperialTime;
         dwResignTime := ResignTime;
+        dwDisconnectTime := DisconnectTime;
       end;
       Player.lpInitialState := @InitialState;
 
