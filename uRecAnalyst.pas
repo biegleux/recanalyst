@@ -1027,7 +1027,7 @@ begin
 
       {$IFDEF FPC}
       if (ZDecompressStream2(inStream, fHeaderStream, NO_HEADER) < 0) then
-        raise ERecAnalystException.Create(c_cannotdecompress, RECANALYST_DECOMP);
+        raise ERecAnalystException.Create(RECANALYST_DECOMP);
       // zError (code)
       {$ELSE}
       ZDecompressStream2(inStream, fHeaderStream, NO_HEADER);
@@ -2203,7 +2203,7 @@ begin
 
       {$IFDEF FPC}
       if (ZCompressStream2(fHeaderStream, hs, Z_DEFAULT_COMPRESSION, NO_HEADER, 9, Z_DEFAULT_STRATEGY) < 0) then
-        raise ERecAnalystException.Create(c_cannotcompress, RECANALYST_COMP);
+        raise ERecAnalystException.Create(RECANALYST_COMP);
       // zError(code)
       {$ELSE}
       ZCompressStream2(fHeaderStream, hs, zcDefault, NO_HEADER, 9, zsDefault);
@@ -2221,15 +2221,15 @@ begin
       on ERecAnalystException do
         raise;
       on EReadError do
-        raise ERecAnalystException.Create(c_cannotreadsection, RECANALYST_FILEREAD);
+        raise ERecAnalystException.Create(RECANALYST_FILEREAD);
       on EFCreateError do
-        raise ERecAnalystException.Create(c_cannotcreatefile, RECANALYST_FILECREATE);
+        raise ERecAnalystException.Create(RECANALYST_FILECREATE);
       {$IFNDEF FPC}
       on EZCompressionError do
-        raise ERecAnalystException.Create(c_cannotcompress, RECANALYST_COMP);
+        raise ERecAnalystException.Create(RECANALYST_COMP);
       {$ENDIF}
       else
-        raise ERecAnalystException.Create(c_unknown, RECANALYST_UNKNOWN);
+        raise ERecAnalystException.Create(RECANALYST_UNKNOWN);
     end;
   finally
     hs.Free();
