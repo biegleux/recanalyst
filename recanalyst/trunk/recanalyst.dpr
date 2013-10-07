@@ -26,7 +26,7 @@ library recanalyst;
 {$IFNDEF FPC}
   {$IFDEF WIN64}
     {$LIBSUFFIX '64'}
-{$ELSE}
+{$ELSE}               
     {$LIBSUFFIX '32'}
   {$ENDIF}
 {$ENDIF}
@@ -35,7 +35,6 @@ library recanalyst;
   {.$WEAKLINKRTTI ON}
   {.$RTTI EXPLICIT METHODS([]) PROPERTIES([]) FIELDS([])}
 {$ENDIF}
-
 
 {.$DEFINE EXTENDED}
 
@@ -63,7 +62,7 @@ type
     dwWood: DWORD;
     dwStone: DWORD;
     dwGold: DWORD;
-    iStartingAge: Integer;
+    dwStartingAge: DWORD;
     dwHouseCapacity: DWORD;
     dwPopulation: DWORD;
     dwCivilianPop: DWORD;
@@ -244,7 +243,7 @@ const
   RECANALYST_TIMECONV    = GEN_BASE - 6;
   RECANALYST_OBJECTIVES  = GEN_BASE - 7;
   RECANALYST_ENUMPRECHAT = GEN_BASE - 8;
-  RECANALYST_ENUMINCHAT  = GEN_BASE - 8;
+  RECANALYST_ENUMINCHAT  = GEN_BASE - 9;
   RECANALYST_ENUMT       = GEN_BASE - 10;
   RECANALYST_ENUMR       = GEN_BASE - 11;
   RECANALYST_GAMESETTS   = GEN_BASE - 12;
@@ -256,7 +255,7 @@ const
   {$ENDIF}
 
 var
-  recanalyst_version: PAnsiChar = '1.3';
+  recanalyst_version: PAnsiChar = '1.4';
 
 const
   ErrorMessages: array[{$IFDEF EXTENDED}RECANALYST_SETCOMM{$ELSE}
@@ -305,6 +304,13 @@ function recanalyst_analyze(lpRecAnalyst: PRecAnalyst;
 function recanalyst_getgamesettings(lpRecAnalyst: PRecAnalyst;
   lpGameSettings: PGameSettingsStruct): Integer; stdcall; forward;
 
+{ This routine gets the objectives string. recanalyst_analyze() must first be called.
+
+  lpObjectives address of buffer for objectives string, you can get the size of
+    buffer required for objectives string by passing in a NULL parameter. }
+function recanalyst_getobjectives(lpRecAnalyst: PRecAnalyst;
+  lpObjectives: PAnsiChar): Integer; stdcall; forward;
+
 { This routine enumerates all players by passing the TPlayerStruct of each player,
   in turn, to an application-defined callback function. recanalyst_enumplayers()
   continues until the last player is enumerated or the callback function returns
@@ -317,14 +323,6 @@ function recanalyst_getgamesettings(lpRecAnalyst: PRecAnalyst;
     to the callback function. }
 function recanalyst_enumplayers(lpRecAnalyst: PRecAnalyst;
   lpEnumFunc: EnumPlayersProc; lParam: LPARAM): Integer; stdcall; forward;
-
-{ This routine gets the objectives string from a file set by the recanalyst_setparams().
-  recanalyst_analyze() must first be called.
-
-  lpObjectives address of buffer for objectives string, you can get the size of
-  buffer required for objectives string by passing in a NULL parameter. }
-function recanalyst_getobjectives(lpRecAnalyst: PRecAnalyst;
-  lpObjectives: PAnsiChar): Integer; stdcall; forward;
 
 { This routine enumerates pre-game chat messages by passing the TChatMessageStruct
   of each message, in turn, to an application-defined callback function.
@@ -384,7 +382,8 @@ function recanalyst_enumresearches(lpRecAnalyst: PRecAnalyst;
 
   dwHeight defines the map image height.
 
-  lpImageBuffer address of buffer for map image. }
+  lpImageBuffer address of buffer for map image, you can get the size of buffer
+    required for map image by passing in a NULL parameter. }
 function recanalyst_generatemap(lpRecAnalyst: PRecAnalyst; dwWidth, dwHeight: DWORD;
   lpImageBuffer: Pointer): Integer; stdcall; forward;
 
@@ -397,7 +396,7 @@ function recanalyst_analyzetime(lpRecAnalyst: PRecAnalyst): Integer; stdcall; fo
   dwTime internal time representation (miliseconds).
 
   lpTime address of buffer for time string, you can get the size of buffer
-  required for time string by passing in a NULL parameter. }
+    required for time string by passing in a NULL parameter. }
 function recanalyst_timetostring(dwTime: DWORD; lpTime: PAnsiChar): Integer;
   stdcall; forward;
 
@@ -545,6 +544,37 @@ begin
   end;
 end;
 
+function recanalyst_getobjectives(lpRecAnalyst: PRecAnalyst;
+  lpObjectives: PAnsiChar): Integer; stdcall;
+var
+  RecAnalyst: TRecAnalyst;
+begin
+  if not Assigned(lpRecAnalyst) then
+  begin
+    Result := RECANALYST_INVALIDPTR;
+    Exit;
+  end;
+
+  try
+    RecAnalyst := TRecAnalyst(lpRecAnalyst);
+
+    if not RecAnalyst.Analyzed then
+    begin
+      Result := RECANALYST_NOTANALYZED;
+      Exit;
+    end;
+
+    if not Assigned(lpObjectives) then
+      Result := Length(RecAnalyst.GameSettings.ObjectivesString) + 1
+    else begin
+      StrPCopyA(lpObjectives, RecAnalyst.GameSettings.ObjectivesString);
+      Result := RECANALYST_OK;
+    end;
+  except
+    Result := RECANALYST_OBJECTIVES;
+  end;
+end;
+
 function recanalyst_enumplayers(lpRecAnalyst: PRecAnalyst;
   lpEnumFunc: EnumPlayersProc; lParam: LPARAM): Integer; stdcall;
 var
@@ -588,7 +618,7 @@ begin
         dwWood := Wood;
         dwStone := Stone;
         dwGold := Gold;
-        iStartingAge := Ord(StartingAge);
+        dwStartingAge := Ord(StartingAge);
         dwHouseCapacity := HouseCapacity;
         dwPopulation := Population;
         dwCivilianPop := CivilianPop;
@@ -622,37 +652,6 @@ begin
     Result := RECANALYST_OK;
   except
     Result := RECANALYST_ENUMP;
-  end;
-end;
-
-function recanalyst_getobjectives(lpRecAnalyst: PRecAnalyst;
-  lpObjectives: PAnsiChar): Integer; stdcall;
-var
-  RecAnalyst: TRecAnalyst;
-begin
-  if not Assigned(lpRecAnalyst) then
-  begin
-    Result := RECANALYST_INVALIDPTR;
-    Exit;
-  end;
-
-  try
-    RecAnalyst := TRecAnalyst(lpRecAnalyst);
-
-    if not RecAnalyst.Analyzed then
-    begin
-      Result := RECANALYST_NOTANALYZED;
-      Exit;
-    end;
-
-    if not Assigned(lpObjectives) then
-      Result := Length(RecAnalyst.GameSettings.ObjectivesString) + 1
-    else begin
-      StrPCopyA(lpObjectives, RecAnalyst.GameSettings.ObjectivesString);
-      Result := RECANALYST_OK;
-    end;
-  except
-    Result := RECANALYST_OBJECTIVES;
   end;
 end;
 
@@ -901,12 +900,6 @@ end;
 function recanalyst_timetostring(dwTime: DWORD;
   lpTime: PAnsiChar): Integer; stdcall;
 begin
-  if not Assigned(lpTime) then
-  begin
-    Result := RECANALYST_INVALIDPTR;
-    Exit;
-  end;
-
   try
     if not Assigned(lpTime) then
       Result := Length(TRecAnalyst.GameTimeToString(dwTime)) + 1
@@ -1008,8 +1001,8 @@ exports
   recanalyst_free name 'recanalyst_free',
   recanalyst_analyze name 'recanalyst_analyze',
   recanalyst_getgamesettings name 'recanalyst_getgamesettings',
-  recanalyst_enumplayers name 'recanalyst_enumplayers',
   recanalyst_getobjectives name 'recanalyst_getobjectives',
+  recanalyst_enumplayers name 'recanalyst_enumplayers',
   recanalyst_enumpregamechat name 'recanalyst_enumpregamechat',
   recanalyst_enumingamechat name 'recanalyst_enumingamechat',
   recanalyst_enumtributes name 'recanalyst_enumtributes',

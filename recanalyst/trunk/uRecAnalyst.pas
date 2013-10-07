@@ -286,6 +286,7 @@ type
     fIsMgl: Boolean;
     fIsMgx: Boolean;
     fIsMgz: Boolean;
+    fIsUserPatch: Boolean;
     fHeaderStream: TMemStream;
     fBodyStream: TMemStream;
     fMapData: array of array of Integer;
@@ -308,6 +309,7 @@ type
     function AnalyzeHeader(): Boolean;
     function AnalyzeBody(): Boolean;
     procedure PostAnalyze();
+    procedure ReadPlayerInfoBlockEx(const num_player: Byte);
     procedure ReadPlayerInfoBlock(const num_player: Byte);
   public
     FileName: String;
@@ -919,6 +921,7 @@ begin
   fIsMgl := False;
   fIsMgx := False;
   fIsMgz := False;
+  fIsUserPatch := False;
   fHeaderStream.Clear();
   fBodyStream.Clear();
   fMapWidth := 0;
@@ -1064,6 +1067,7 @@ const
   separator: array[0..3] of AnsiChar = (#$9D, #$FF, #$FF, #$FF);
   scenario_constant: array[0..3] of AnsiChar = (#$F6, #$28, #$9C, #$3F);
   aok_separator: array[0..3] of AnsiChar = (#$9A, #$99, #$99, #$3F);
+  aoc_subversion: Double = 11.76;
 var
   buff: array[0..7] of Byte;
   version: array[0..7] of AnsiChar;
@@ -1099,6 +1103,8 @@ var
   is_timelimit: Byte;
   time_limit: Single;
   num_data, num_couples, map_size_x2, map_size_y2, num_unknown_data2: Int32;
+  subversion: Single;
+  rounded_subversion: Double;
 begin
   FillChar(buff, SizeOf(buff), $00);
   FillChar(buff256, SizeOf(buff256), #0);
@@ -1108,10 +1114,15 @@ begin
     { getting version }
     FillChar(version, SizeOf(version), #0);
     ReadBuffer(version, SizeOf(version));
+    ReadFloat(subversion);
+    rounded_subversion := RoundTo(subversion, -2);
+    // AOE2HD: 2.0 = 11.80, 2.3 = 11.90, 2.5 = 11.91, 2.6 = 11.91, 2.8 = 11.93
     if (version = VER_94) then
     begin
       if fIsMgz then
-        GameSettings.GameVersion := gvAOC11
+        GameSettings.GameVersion := gvAOCUP11
+      else if (rounded_subversion > aoc_subversion) then
+        GameSettings.GameVersion := gvAOE2HD
       else
         GameSettings.GameVersion := gvAOC;
     end else if (version = VER_93) then
@@ -1121,7 +1132,13 @@ begin
     else if (version = TRL_93) and fIsMgl then
       GameSettings.GameVersion := gvAOKTrial
     else if (version = VER_95) then
-      GameSettings.GameVersion := gvAOC21
+      GameSettings.GameVersion := gvAOFE21
+    else if (version = VER_98) then
+      GameSettings.GameVersion := gvAOCUP12
+    else if (version = VER_99) then
+      GameSettings.GameVersion := gvAOCUP13
+    else if (version = VER_9A) then
+      GameSettings.GameVersion := gvAOCUP14
     else
       GameSettings.GameVersion := gvUnknown;
 
@@ -1130,13 +1147,14 @@ begin
         begin
           fIsMgl := True; fIsMgx := False; fIsMgz := False;
         end;
-      gvAOC, gvAOCTrial:
+      gvAOC, gvAOCTrial, gvAOE2HD:
         begin
           fIsMgl := False; fIsMgx := True; fIsMgz := False;
         end;
-      gvAOC11, gvAOC21:
+      gvAOFE21, gvAOCUP11..gvAOCUP14:
         begin
           fIsMgl := False; fIsMgx := True; fIsMgz := True;
+          fIsUserPatch := True;
         end;
     end;
     { getting Trigger_info position }
@@ -1209,7 +1227,7 @@ begin
     end;
     { getting victory }
     Seek(trigger_info_pos - SizeOf(constant2), soFromBeginning);
-    if fIsMgx then Seek(-7);
+    SeekIf(fIsMgx, -7);
     Seek(-110);
     ReadInt32(victory_condition);
     Seek(8);
@@ -1249,13 +1267,13 @@ begin
           Seek(text_len);
           ReadInt32(sound_len);
           Seek(sound_len);
-          Seek(num_selected_object shl 2);
+          Seek(num_selected_object * 4);
         end;
-        Seek(num_effect shl 2);
+        Seek(num_effect * 4);
         ReadInt32(num_condition);
         Seek(76 * num_condition);
       end;
-      Seek(num_trigger shl 2);
+      Seek(num_trigger * 4);
       GameSettings.Map := '';
       GameSettings.GameType := gtScenario;  { obsolete? }
     end;
@@ -1310,7 +1328,7 @@ begin
       end;
     end;
     { skip AI_info if exists }
-    Seek($0C, soFromBeginning);
+    Seek(12, soFromBeginning);
     ReadBool(include_ai);
     if (include_ai) then
     begin
@@ -1358,7 +1376,7 @@ begin
 
     { getting map }
     Seek(62);
-    if fIsMgl then Seek(-2);
+    SeekIf(fIsMgl, -2);
     ReadInt32(map_size_x);
     ReadInt32(map_size_y);
     fMapWidth := map_size_x;
@@ -1370,7 +1388,7 @@ begin
     begin
       Seek(1275 + map_size_x * map_size_y);
       ReadInt32(num_float);
-      Seek((num_float shl 2) + 4);
+      Seek((num_float * 4) + 4);
     end;
     Seek(2);
 
@@ -1386,19 +1404,22 @@ begin
       end;
 
     ReadInt32(num_data);
-    Seek(4 + (num_data shl 2));
+    Seek(4 + 4 * num_data);
     for i := 0 to num_data - 1 do
     begin
       ReadInt32(num_couples);
-      Seek(num_couples shl 2);
+      Seek(num_couples * 8);
     end;
     ReadInt32(map_size_x2);
     ReadInt32(map_size_y2);
-    Seek((map_size_x2 * map_size_y2 shl 2) + 4);
+    Seek((map_size_x2 * map_size_y2 * 4) + 4);
     ReadInt32(num_unknown_data2);
     Seek(27 * num_unknown_data2 + 4);
     { getting Player_info }
-    ReadPlayerInfoBlock(num_player);
+    if (GameSettings.GameVersion <> gvAOE2HD) then
+      ReadPlayerInfoBlockEx(num_player)
+    else
+      ReadPlayerInfoBlock(num_player);
     { getting objectives or instructions }
     if (scenario_header_pos > -1) then
     begin
@@ -1411,7 +1432,7 @@ begin
         if fIsMgl then
           GameSettings.GameType := gtScenario; { this way we detect scenarios in mgl, is there any other way? }
       end;
-      if fIsMgx then Seek(24) else Seek(20);
+      SeekIfElse(fIsMgx, 24, 20);
       { scenario instruction or Objectives string, depends on game type }
       {$IFDEF EXTENDED}objectives_pos := Position;{$ENDIF}
       ReadString(buff65536, 2);
@@ -1512,7 +1533,7 @@ begin
             ReadInt32(time);
             Inc(time_cnt, time); { time_cnt is in miliseconds }
             ReadInt32(unknown);
-            if (unknown = 0) then Seek(28);
+            SeekIf(unknown = 0, 28);
             Seek(12);
           end;
         $01:
@@ -2180,8 +2201,8 @@ begin
   if (GaiaObjects.Count > 0) then
     GaiaObjects.Sort(@GaiaObjectsCompare);
 
-  { AOC11 (and above) bug or feature? }
-  if (GameSettings.GameVersion > gvAOC10c) then
+  { fix pop limit for UserPatch }
+  if (fIsUserPatch) then
     GameSettings.PopLimit := 25 * GameSettings.PopLimit;
 end;
 {$IFDEF EXTENDED}
@@ -2286,7 +2307,7 @@ begin
   end;
 end;
 {$ENDIF}
-procedure TRecAnalyst.ReadPlayerInfoBlock(const num_player: Byte);
+procedure TRecAnalyst.ReadPlayerInfoBlockEx(const num_player: Byte);
 const
   exist_object_separator: array[0..8] of AnsiChar = (
     #$0B, #$00, #$08, #$00, #$00, #$00, #$02, #$00, #$00);
@@ -2300,6 +2321,7 @@ const
     #$00, #$0B, #$00, #$02, #$00, #$00, #$00, #$02, #$00, #$00, #$00, #$0B);
   objects_mid_separator_gaia: array[0..9] of AnsiChar = (
     #$00, #$0B, #$00, #$40, #$00, #$00, #$00, #$20, #$00, #$00);
+  aofe_num_research = 555;
 var
   i: Integer;
   exist_object_pos: Int32;
@@ -2317,6 +2339,8 @@ var
   UO: TUnitObject;
   separator_pos: Longint;
   map_size_x, map_size_y: Int32;
+  num_resources, num_last_locations: Int32;
+  num_research: Word;
 begin
   map_size_x := fMapWidth;
   map_size_y := fMapHeight;
@@ -2362,10 +2386,10 @@ begin
           ReadFloat(civilian_pop);
           Seek(8);
           ReadFloat(military_pop);
-          if fIsMgx then Seek(629) else Seek(593);
+          SeekIfElse(fIsMgx, 629, 593);
           ReadFloat(init_camera_pos_x);
           ReadFloat(init_camera_pos_y);
-          if fIsMgx then Seek(9) else Seek(5);
+          SeekIfElse(fIsMgx, 9, 5);
           ReadChar(civilization);
           { sometimes(?) civilization is zero in scenarios when the first player is briton (only? always? rule?) }
           if (civilization = 0) then Inc(civilization);
@@ -2391,23 +2415,44 @@ begin
             InitialState.MilitaryPop := Round(military_pop);
             InitialState.ExtraPop := InitialState.Population - (InitialState.CivilianPop + InitialState.MilitaryPop);
           end;
-        end;
-
-        if (i = 0) then
+        end else
         begin
           { GAIA }
-          if (GameSettings.GameVersion = gvAOKTrial) or
-            (GameSettings.GameVersion = gvAOCTrial) then Seek(4);
-          Seek(num_player + 70);
-          if fIsMgx then Seek(792) else Seek(756);
+          if (GameSettings.GameVersion = gvAOKTrial)
+            or (GameSettings.GameVersion = gvAOCTrial) then Seek(4);
+          Seek(num_player + 43);
+          ReadWord(player_name_len);
+          Seek(player_name_len + 1);
+          ReadInt32(num_resources);
+          Seek(1 + 4 * num_resources + 9);
+          if fIsMgx then
+          begin
+            ReadInt32(num_last_locations);
+            SeekIf(num_last_locations > 0, 8 * num_last_locations);
+          end;
+          Seek(11);
+          SeekIfElse(fIsMgx, 4182, 3578);
+          SeekIf(fIsUserPatch, 8176);
+          Seek(4);
+          ReadWord(num_research);
+          if (fIsUserPatch) then
+          begin
+            if (num_research = aofe_num_research) then
+            begin
+              if (GameSettings.GameVersion = gvAOCUP12) then
+                GameSettings.GameVersion := gvAOFE22;  // AOFE 2.2 is using UP 1.2
+            end;
+          end;
+          SeekIfElse(fIsMgx, -4182, -3578);
         end;
 
-        if fIsMgx then Seek(41249) else Seek(34277);
+        SeekIfElse(fIsMgx, 41249, 34277);
         Seek(map_size_x * map_size_y);
 
         { Getting exist_object_pos }
         exist_object_pos := Find(exist_object_separator);
-        if (exist_object_pos = -1) then Exit;
+        if (exist_object_pos = -1) then
+          raise ERecAnalystException.Create(RECANALYST_READPLAYER);
 
         while True do
         begin
@@ -2432,7 +2477,7 @@ begin
                     end;
                 end;
                 Seek(63 - SizeOf(object_type) - SizeOf(owner) - SizeOf(unit_id));
-                if fIsMgl then Seek(1);
+                SeekIf(fIsMgl, 1);
               end;
             20:
               begin
@@ -2443,7 +2488,7 @@ begin
                   ReadChar(b);
                   Seek(-59 - SizeOf(b));
                   Seek(68 - SizeOf(object_type) - SizeOf(owner) - SizeOf(unit_id));
-                  if (b = 2) then Seek(34);
+                  SeekIf(b = 2, 34);
                 end else
                   Seek(103 - SizeOf(object_type) - SizeOf(owner) - SizeOf(unit_id))
               end;
@@ -2455,14 +2500,14 @@ begin
                   ReadChar(b);
                   Seek(-59 - SizeOf(b));
                   Seek(204 - SizeOf(object_type) - SizeOf(owner) - SizeOf(unit_id));
-                  if (b = 2) then Seek(17);
+                  SeekIf(b = 2, 17);
                 end else
                 begin
                   Seek(60);
                   ReadChar(b);
                   Seek(-60 - SizeOf(b));
                   Seek(205 - SizeOf(object_type) - SizeOf(owner) - SizeOf(unit_id));
-                  if (b = 2) then Seek(17);
+                  SeekIf(b = 2, 17);
                 end;
              end;
             60:
@@ -2472,7 +2517,7 @@ begin
                 ReadChar(b);
                 Seek(-204 - SizeOf(b));
                 Seek(233 - SizeOf(object_type) - SizeOf(owner) - SizeOf(unit_id));
-                if (b <> 0) then Seek(67);
+                SeekIf(b <> 0, 67);
               end;
             70:
               begin
@@ -2528,7 +2573,7 @@ begin
                   separator_pos := Find(aok_object_end_separator);
                 if (separator_pos = -1) then Exit;
                 Seek(126);
-                if fIsMgx then Seek(1);
+                SeekIf(fIsMgx, 1);
               end;
             00:
               begin
@@ -2545,9 +2590,11 @@ begin
                 end;
                 if CompareMem(@buff256, @objects_mid_separator_gaia, 2) then
                   Seek(SizeOf(objects_mid_separator_gaia))
-                else Exit;
+                else
+                  raise ERecAnalystException.Create(RECANALYST_READPLAYER);
               end;
-            else Exit;
+            else
+              raise ERecAnalystException.Create(RECANALYST_READPLAYER);
           end;
         end;
       end;
@@ -2555,6 +2602,108 @@ begin
   except
     on E: Exception do
       raise ERecAnalystException.Create(RECANALYST_READPLAYER);
+  end;
+end;
+
+procedure TRecAnalyst.ReadPlayerInfoBlock(const num_player: Byte);
+const
+  player_info_end_separator: array[0..11] of AnsiChar = (
+    #$00, #$0B, #$00, #$02, #$00, #$00, #$00, #$02, #$00, #$00, #$00, #$0B);
+var
+  map_size_x, map_size_y: Int32;
+  i: Integer;
+  Player, P: TPlayer;
+  food, wood, stone, gold, headroom, population, civilian_pop, military_pop, data6: Single;
+  init_camera_pos_x, init_camera_pos_y: Single;
+  civilization, player_color: Byte;
+begin
+  map_size_x := fMapWidth;
+  map_size_y := fMapHeight;
+  with fHeaderStream do
+  begin
+    { first is GAIA, skip some useless bytes }
+    if (GameSettings.GameVersion = gvAOKTrial)
+      or (GameSettings.GameVersion = gvAOCTrial) then Seek(4);
+    Seek(num_player + 70);  // + 2 len of playerlen
+    SeekIfElse(fIsMgx, 792, 756);
+    SeekIfElse(fIsMgx, 41249, 34277);
+    Seek(map_size_x * map_size_y);
+    // Explored GAIA Objects
+    // Units Data II
+
+    for i := 0 to Players.Count - 1 do
+    begin
+      Player := Players[i];
+      { skip cooping player, she/he has no data in Player_info }
+      P := Players.GetPlayerByIndex(Player.Index);
+      if (Assigned(P)) and (P <> Player) and (P.CivId <> cNone) then
+      begin
+        Player.CivId := P.CivId;
+        Player.ColorId := P.ColorId;
+        Player.Color := P.Color;
+        Player.Team := P.Team; { required }
+        Player.IsCooping := True;
+        Continue;
+      end;
+
+      if (Find(player_info_end_separator) = -1) then
+        raise ERecAnalystException.Create(RECANALYST_READPLAYER);
+
+      if (GameSettings.GameVersion = gvAOKTrial)
+        or (GameSettings.GameVersion = gvAOCTrial) then Seek(4);
+      Seek(num_player + 52 + Length(Player.Name)); // + null-terminator
+
+      { Civ_header }
+      ReadFloat(food);
+      ReadFloat(wood);
+      ReadFloat(stone);
+      ReadFloat(gold);
+      { headroom = (house capacity - population) }
+      ReadFloat(headroom);
+      Seek(4);
+      { Starting Age, note: PostImperial Age = Imperial Age here }
+      ReadFloat(data6);
+      Seek(16);
+      ReadFloat(population);
+      Seek(100);
+      ReadFloat(civilian_pop);
+      Seek(8);
+      ReadFloat(military_pop);
+      SeekIfElse(fIsMgx, 629, 593);
+      ReadFloat(init_camera_pos_x);
+      ReadFloat(init_camera_pos_y);
+      SeekIfElse(fIsMgx, 9, 5);
+      ReadChar(civilization);
+      { sometimes(?) civilization is zero in scenarios when the first player is briton (only? always? rule?) }
+      if (civilization = 0) then Inc(civilization);
+      { skip unknown9[3] }
+      Seek(3);
+      ReadChar(player_color);
+      with Player do
+      begin
+        CivId := TCivilization(civilization);
+        ColorId := player_color;
+        SetColor(player_color);
+        InitialState.Position.X := Round(init_camera_pos_x);
+        InitialState.Position.Y := Round(init_camera_pos_y);
+        InitialState.Food := Round(food);
+        InitialState.Wood := Round(wood);
+        InitialState.Stone := Round(stone);
+        InitialState.Gold := Round(gold);
+        InitialState.StartingAge := TStartingAge(Round(data6));
+        // TODO: Huns, Goths, Nomad etc. var...
+        InitialState.HouseCapacity := Round(headroom) + Round(population);
+        InitialState.Population := Round(population);
+        InitialState.CivilianPop := Round(civilian_pop);
+        InitialState.MilitaryPop := Round(military_pop);
+        InitialState.ExtraPop := InitialState.Population - (InitialState.CivilianPop + InitialState.MilitaryPop);
+      end;
+
+      SeekIfElse(fIsMgx, 41249, 34277);
+      Seek(map_size_x * map_size_y);
+      // Explored GAIA Objects
+      // Units Data II
+    end;
   end;
 end;
 

@@ -30,6 +30,8 @@ type
     function Find(Needle: Pointer; SizeOfNeedle: Integer): Longint; overload;
   public
     function Seek(Offset: Longint): Longint; overload;
+    function SeekIf(Condition: Boolean; Offset: Longint): Longint;
+    function SeekIfElse(Condition: Boolean; TrueOffset, FalseOffset: Longint): Longint;
     procedure ReadInt32(var Buffer: Int32);
     procedure ReadWord(var Buffer: Word);
     procedure ReadChar(var Buffer: Byte);
@@ -49,6 +51,21 @@ uses
 function TMemStream.Seek(Offset: Longint): Longint;
 begin
   Result := Seek(Offset, soFromCurrent);
+end;
+
+function TMemStream.SeekIf(Condition: Boolean; Offset: Longint): Longint;
+begin
+  Result := 0;
+  if Condition then
+    Result := Seek(Offset);
+end;
+
+function TMemStream.SeekIfElse(Condition: Boolean; TrueOffset, FalseOffset: Longint): Longint;
+begin
+  if Condition then
+    Result := Seek(TrueOffset)
+  else
+    Result := Seek(FalseOffset)
 end;
 
 procedure TMemStream.ReadInt32(var Buffer: Int32);

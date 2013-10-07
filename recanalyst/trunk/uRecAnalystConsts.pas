@@ -36,7 +36,8 @@ type
   TBuildingRec = TResearchRec;
 
   TGameVersion = (gvUnknown, gvAOK, gvAOKTrial, gvAOK20, gvAOK20a, gvAOC,
-    gvAOCTrial, gvAOC10, gvAOC10c, gvAOC11, gvAOC21);
+    gvAOCTrial, gvAOC10, gvAOC10c, gvAOE2HD, gvAOFE21, gvAOFE22, gvAOCUP11,
+    gvAOCUP12, gvAOCUP13, gvAOCUP14);
   TMapStyle = (msStandard, msRealWorld, msCustom);
   TDifficultyLevel = (dlHardest, dlHard, dlModerate, dlStandard {dlEasy}, dlEasiest);
   TGameType = (gtRandomMap, gtRegicide, gtDeathMatch, gtScenario, gtCampaign,
@@ -47,9 +48,9 @@ type
   TCivilization = (cNone, cBritons, cFranks, cGoths, cTeutons, cJapanese, cChinese,
     cByzantines, cPersians, cSaracens, cTurks, cVikings, cMongols, cCelts, cSpanish,
     cAztecs, cMayans, cHuns, cKoreans, cItalians, cIndians, cIncas, cMagyars, cSlavs);
-  TResourceId = (rFood, rWood , rStone, rGold);
-  TStartingAge = (saUnknown = -1, saDarkAge = 0, saFeudalAge = 1, saCastleAge = 2,
-    saImperialAge = 3, saPostImperialAge = 4);
+  TResourceId = (rFood, rWood, rStone, rGold);
+  TStartingAge = (saDarkAge = 0, saFeudalAge = 1, saCastleAge = 2, saImperialAge = 3,
+    saPostImperialAge = 4);
   TVictoryCondition = (vcStandard, vcConquest, vcTimeLimit, vcScoreLimit, vcCustom);
 
   {$I id_maps.inc}
@@ -64,6 +65,9 @@ const
   VER_93 = 'VER 9.3';
   TRL_93 = 'TRL 9.3';
   VER_95 = 'VER 9.5';
+  VER_98 = 'VER 9.8';
+  VER_99 = 'VER 9.9';
+  VER_9A = 'VER 9.A';
 
   MAPS_NUM = 37;
   MAPS: array[0..MAPS_NUM - 1] of TMapsRec = (
@@ -107,7 +111,8 @@ const
 
   GAME_VERSIONS: array[TGameVersion] of AnsiString = (
     'Unknown', 'AOK', 'AOK Trial', 'AOK 2.0', 'AOK 2.0a', 'AOC', 'AOC Trial',
-    'AOC 1.0', 'AOC 1.0c', 'AOC 1.1', 'AOFE 2.1');
+    'AOC 1.0', 'AOC 1.0c', 'AOE2 HD', 'AOFE 2.1', 'AOFE 2.2', 'AOC UP 1.1', 'AOC UP 1.2',
+    'AOC UP 1.3', 'AOC UP 1.4');
 
   MAP_STYLES: array[TMapStyle] of AnsiString = (
     'Standard', 'Real World', 'Custom');
@@ -133,8 +138,7 @@ const
     'Normal (6 players)', 'Large (8 players)', 'Giant');
 
   STARTING_AGES: array[TStartingAge] of AnsiString = (
-    'Unknown', 'Dark Age', 'Feudal Age', 'Castle Age', 'Imperial Age',
-    'Post-Imperial Age');
+    'Dark Age', 'Feudal Age', 'Castle Age', 'Imperial Age', 'Post-Imperial Age');
 
   VICTORY_CONDITIONS: array[TVictoryCondition] of AnsiString = (
     'Standard', 'Conquest', 'Time Limit', 'Score Limit', 'Custom');
