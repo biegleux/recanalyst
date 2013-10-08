@@ -139,7 +139,7 @@ type
   PChatMessageStruct = ^TChatMessageStruct;
   TChatMessageStruct = record
     dwTime: DWORD;  // always zero for pre-game chat messages
-    dwPlayerId: DWORD; // zero for players who left the game before its start in pre-game chat,
+    dwColorId: DWORD;  // zero for players who left the game before its start in pre-game chat,
                        // zero for age advances, resign and disconnect messages in in-game chat
     szMessage: array[0..MAXBYTE] of AnsiChar;
   end;
@@ -687,10 +687,7 @@ begin
       with ChatMessage do
       begin
         dwTime := M.Time;
-        if Assigned(M.Player) then
-          dwPlayerId := M.Player.Index
-        else
-          dwPlayerId := 0;
+        dwColorId := M.ColorId;
         CpyMem(szMessage, M.Msg);
       end;
       if not lpEnumFunc(@ChatMessage, lParam) then Break;
@@ -733,10 +730,7 @@ begin
       with ChatMessage do
       begin
         dwTime := M.Time;
-        if Assigned(M.Player) then
-          dwPlayerId := M.Player.Index
-        else
-          dwPlayerId := 0;
+        dwColorId := M.ColorId;
         CpyMem(szMessage, M.Msg);
       end;
       if not lpEnumFunc(@ChatMessage, lParam) then Break;

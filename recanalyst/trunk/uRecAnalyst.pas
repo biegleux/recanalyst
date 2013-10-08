@@ -258,7 +258,7 @@ type
   { TChatMessage }
   TChatMessage = class(TObject)
     Time: Integer;
-    Player: TPlayer;
+    ColorId: Integer;
     Msg: AnsiString;
     constructor Create();
   end;
@@ -544,7 +544,7 @@ constructor TChatMessage.Create();
 begin
   inherited Create();
   Time := 0;
-  Player := nil;
+  ColorId := 0;
   Msg := '';
 end;
 
@@ -1321,7 +1321,9 @@ begin
           // buff65536[2] is not really player index
           // TODO may be wrong if someone enter/leave game, or coop, no workaround
           // exists, as players may have same names
-          ChatMessage.Player := Players.GetPlayerByIndex(StrToIntDef(String(buff65536[2]), 0));
+          Player := Players.GetPlayerByIndex(StrToIntDef(String(buff65536[2]), 0));
+          if Assigned(Player) then
+            ChatMessage.ColorId := Player.ColorId;
           ChatMessage.Msg := Copy(buff65536, 4, Length(buff65536));
           PreGameChatMessages.Add(ChatMessage);
         end;
@@ -1520,7 +1522,9 @@ begin
                 begin
                   ChatMessage := TChatMessage.Create();
                   ChatMessage.Time := time_cnt;
-                  ChatMessage.Player := Players.GetPlayer(StrToIntDef(String(buff256[2]), 0) - 1);
+                  Player := Players.GetPlayer(StrToIntDef(String(buff256[2]), 0) - 1);
+                  if Assigned(Player) then
+                    ChatMessage.ColorId := Player.ColorId;
                   ChatMessage.Msg := Copy(buff256, 4, System.Length(buff256));
                   InGameChatMessages.Add(ChatMessage);
                 end;
