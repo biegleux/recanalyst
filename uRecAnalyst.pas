@@ -2763,13 +2763,13 @@ begin
 
   { zero-length chat exists }
   if (buff[0] = #0) then Exit;
-  if (buff[0] = '@') and (buff[1] = '#') {and (buff[2] >= '1') and (buff[2] <= '8')} then
+  if (buff[0] = '@') and (buff[1] = '#') and (buff[2] >= '0') and (buff[2] <= '8') then
   begin
     ChatMessage := TChatMessage.Create();
     // buff65536[2] is not really player index
     // TODO may be wrong if someone enters/leaves game, or coop, no workaround
     // exists, as players may have same names
-    ChatMessage.Color := StrToIntDef(String(buff[2]), -1);
+    ChatMessage.Color := StrToIntDef(String(buff[2]), 0);
     {Player := Players.GetPlayerByIndex(StrToIntDef(String(buff[2]), 0));
     if Assigned(Player) then
       ChatMessage.ColorId := Player.Index;}
