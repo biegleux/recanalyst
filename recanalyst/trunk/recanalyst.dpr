@@ -46,7 +46,6 @@ uses
   SysUtils,
   Contnrs,
   Math,
-  uRecAnalystBase,
   uRecAnalyst;
 
 type
@@ -72,6 +71,66 @@ type
     szStartingAge: array[0..MAXBYTE] of AnsiChar;
   end;
 
+  { This structure contains information about military stats of the player. }
+  PMilitaryStatsStruct = ^TMilitaryStatsStruct;
+  TMilitaryStatsStruct = record
+    wMilitaryScore: WORD;
+    wUnitsKilled: WORD;
+    wUnitsLost: WORD;
+    wBuildingsRazed: WORD;
+    wBuildingsLost: WORD;
+    wUnitsConverted: WORD;
+  end;
+
+  { This structure contains information about economy stats of the player. }
+  PEconomyStatsStruct = ^TEconomyStatsStruct;
+  TEconomyStatsStruct = record
+    wEconomyScore: WORD;
+    dwFoodCollected: DWORD;
+    dwWoodCollected: DWORD;
+    dwStoneCollected: DWORD;
+    dwGoldCollected: DWORD;
+    wTributeSent: WORD;
+    wTributeRcvd: WORD;
+    wTradeProfit: WORD;
+    wRelicGold: WORD;
+  end;
+
+  { This structure contains information about technology stats of the player. }
+  PTechnologyStatsStruct = ^TTechnologyStatsStruct;
+  TTechnologyStatsStruct = record
+    wTechnologyScore: WORD;
+    dwFeudalAge: DWORD;
+    dwCastleAge: DWORD;
+    dwImperialAge: DWORD;
+    byMapExplored: BYTE;
+    byResearchCount: BYTE;
+    byResearchPercent: BYTE;
+  end;
+
+  { This structure contains information about society stats of the player. }
+  PSocietyStatsStruct = ^TSocietyStatsStruct;
+  TSocietyStatsStruct = record
+    wSocietyScore: WORD;
+    byTotalWonders: BYTE;
+    byTotalCastles: BYTE;
+    byRelicsCaptured: BYTE;
+    wVillagerHigh: WORD;
+  end;
+
+  { This structure contains information about achievement of the player. }
+  PAchievementStruct = ^TAchievementStruct;
+  TAchievementStruct = record
+    bVictory: BOOL;
+    bMedal: BOOL;
+    dwResult: DWORD;
+    dwTotalScore: DWORD;
+    lpMilitaryStats: PMilitaryStatsStruct;
+    lpEconomyStats: PEconomyStatsStruct;
+    lpTechnologyStats: PTechnologyStatsStruct;
+    lpSocietyStats: PSocietyStatsStruct;
+  end;
+
   { This structure contains information about a player. }
   PPlayerStruct = ^TPlayerStruct;
   TPlayerStruct = record
@@ -82,7 +141,7 @@ type
     bOwner: BOOL;
     szCivilization: array[0..MAXBYTE] of AnsiChar;
     dwCivId: DWORD;
-    dwColorId: DWORD;
+    byColor: BYTE;
     bIsCooping: BOOL;
     dwFeudalTime: DWORD;
     dwCastleTime: DWORD;
@@ -90,6 +149,7 @@ type
     dwResignTime: DWORD;
     dwDisconnectTime: DWORD;
     lpInitialState: PInitialStateStruct; // pointer to InitialState struct data
+    lpAchievement: PAchievementStruct; // pointer to Achievement struct data
   end;
 
   { This structure contains information about victory settings. }
@@ -99,6 +159,17 @@ type
     dwScoreLimit: DWORD;
     dwVictoryCondition: DWORD;
     szVictory: array[0..MAXBYTE] of AnsiChar;
+  end;
+
+  { This structure contain information about extra game data. } 
+  PExtraGameDataStruct = ^TExtraGameDataStruct;
+  TExtraGameDataStruct = record
+    bHasData: BOOL;
+    bAllTechs: BOOL;
+    bAllowCheats: BOOL;
+    bTeamTogether: BOOL;
+    bLockSpeed: BOOL;
+    bComplete: BOOL;
   end;
 
   { This structure contains information about game settings. }
@@ -120,6 +191,7 @@ type
     bInGameCoop: BOOL;
     bIsFFA: BOOL;
     dwVersion: DWORD;
+    dwGameMode: DWORD;
     szMap: array[0..MAXWORD] of AnsiChar;
     szPlayersType: array[0..MAXCHAR] of AnsiChar;
     szPOV: array[0..MAXBYTE] of AnsiChar;
@@ -132,15 +204,17 @@ type
     szMapSize: array[0..MAXBYTE] of AnsiChar;
     szVersion: array[0..MAXBYTE] of AnsiChar;
     szScFileName: array[0..MAXWORD] of AnsiChar;
+    szSubVersion: array[0..MAXBYTE] of AnsiChar;
     lpVictory: PVictoryStruct;  // pointer to TVictoryStruct structure
+    lpExtra: PExtraGameDataStruct; // pointer to TExtraGameDataStruct structure
   end;
 
   { This structure contains information about a chat message. }
   PChatMessageStruct = ^TChatMessageStruct;
   TChatMessageStruct = record
     dwTime: DWORD;  // always zero for pre-game chat messages
-    dwColorId: DWORD;  // zero for players who left the game before its start in pre-game chat,
-                       // zero for age advances, resign and disconnect messages in in-game chat
+    byColor: BYTE;  // zero for players who left the game before its start in pre-game chat,
+                    // zero for age advances, resign and disconnect messages in in-game chat
     szMessage: array[0..MAXBYTE] of AnsiChar;
   end;
 
@@ -150,7 +224,7 @@ type
     dwTime: DWORD;
     dwPlayerFrom: DWORD;
     dwPlayerTo: DWORD;
-    byResourceId: Byte;
+    byResourceId: BYTE;
     dwAmount: DWORD;
     fFee: Single;
   end;
@@ -280,6 +354,35 @@ const
     'Unable to release object instance.',
     'Invalid pointer.'
   );
+
+function StrLCopyA(Dest: PAnsiChar; Source: PAnsiChar; MaxLen: Integer): PAnsiChar;
+begin
+  Result := Dest;
+  while (MaxLen > 0) and (Source^ <> #0) do
+  begin
+    Dest^ := Source^;
+    Inc(Source);
+    Inc(Dest);
+    Dec(MaxLen);
+  end;
+  Dest^ := #0;
+end;
+
+function StrPCopyA(Dest: PAnsiChar; const Source: AnsiString): PAnsiChar;
+begin
+  Result := StrLCopyA(Dest, PAnsiChar(Source), Length(Source));
+end;
+
+procedure ZeroMem(var Dest: array of AnsiChar);
+begin
+  FillChar(Dest, SizeOf(Dest), #0);
+end;
+
+procedure CpyMem(var Dest: array of AnsiChar; const Source: AnsiString);
+begin
+  ZeroMem(Dest);
+  CopyMemory(@Dest, PAnsiChar(Source), Min(Length(Source), SizeOf(Dest) - 1));
+end;
 
 { exported api routines }
 
@@ -459,7 +562,6 @@ begin
 
   try
     RecAnalyst := TRecAnalyst(lpRecAnalyst);
-    RecAnalyst.Reset();
     RecAnalyst.FileName := String(AnsiString(lpFileName));
     {$IFDEF EXTENDED}RecAnalyst.KeepStreams := True;{$ENDIF}
     RecAnalyst.Analyze();
@@ -518,6 +620,7 @@ begin
       bInGameCoop := InGameCoop;
       bIsFFA := IsFFA;
       dwVersion := Ord(GameVersion);
+      dwGameMode := Ord(GameMode);
       CpyMem(szMap, Map);
       CpyMem(szPlayersType, PlayersType);
       CpyMem(szPOV, POV);
@@ -529,12 +632,22 @@ begin
       CpyMem(szMapSize, sMapSize);
       CpyMem(szVersion, sGameVersion);
       CpyMem(szScFileName, ScFileName);
+      CpyMem(szSubVersion, sGameSubVersion);
       if Assigned(lpVictory) then
       begin
         lpVictory^.dwTimeLimit := Victory.TimeLimit;
         lpVictory^.dwScoreLimit := Victory.ScoreLimit;
         lpVictory^.dwVictoryCondition := Ord(Victory.VictoryCondition);
         CpyMem(lpVictory^.szVictory, Victory.VictoryString);
+      end;
+      if Assigned(lpExtra) then
+      begin
+        lpExtra^.bHasData := Extra.HasData;
+        lpExtra^.bAllTechs := Extra.AllTechs;
+        lpExtra^.bAllowCheats := Extra.AllowCheats;
+        lpExtra^.bTeamTogether := Extra.TeamTogether;
+        lpExtra^.bLockSpeed := Extra.LockSpeed;
+        lpExtra^.bComplete := Extra.Complete;
       end;
     end;
 
@@ -582,6 +695,11 @@ var
   P: TPlayer;
   Player: TPlayerStruct;
   InitialState: TInitialStateStruct;
+  Achievement: TAchievementStruct;
+  MilitaryStats: TMilitaryStatsStruct;
+  EconomyStats: TEconomyStatsStruct;
+  TechnologyStats: TTechnologyStatsStruct;
+  SocietyStats: TSocietyStatsStruct;
   i: Integer;
 begin
   if not Assigned(lpRecAnalyst) then
@@ -628,6 +746,76 @@ begin
         CpyMem(szStartingAge, StartingAgeString);
       end;
 
+      if RecAnalyst.GameSettings.Extra.HasData then
+      begin
+        ZeroMemory(@Achievement, SizeOf(TAchievementStruct));
+        ZeroMemory(@MilitaryStats, SizeOf(TMilitaryStatsStruct));
+        ZeroMemory(@EconomyStats, SizeOf(TEconomyStatsStruct));
+        ZeroMemory(@TechnologyStats, SizeOf(TTechnologyStatsStruct));
+        ZeroMemory(@SocietyStats, SizeOf(TSocietyStatsStruct));
+
+        { fill military stats struct }
+        with MilitaryStats, P.Achievement.MilitaryStats do
+        begin
+          wMilitaryScore := MilitaryScore;
+          wUnitsKilled := UnitsKilled;
+          wUnitsLost := UnitsLost;
+          wBuildingsRazed := BuildingsRazed;
+          wBuildingsLost := BuildingsLost;
+          wUnitsConverted := UnitsConverted;
+        end;
+        Achievement.lpMilitaryStats := @MilitaryStats;
+
+        { fill economy stats struct }
+        with EconomyStats, P.Achievement.EconomyStats do
+        begin
+          wEconomyScore := EconomyScore;
+          dwFoodCollected := FoodCollected;
+          dwWoodCollected := WoodCollected;
+          dwStoneCollected := StoneCollected;
+          dwGoldCollected := GoldCollected;
+          wTributeSent := TributeSent;
+          wTributeRcvd := TributeRcvd;
+          wTradeProfit := TradeProfit;
+          wRelicGold := RelicGold;
+        end;
+        Achievement.lpEconomyStats := @EconomyStats;
+
+        { fill technology stats struct }
+        with TechnologyStats, P.Achievement.TechnologyStats do
+        begin
+          wTechnologyScore := TechnologyScore;
+          dwFeudalAge := FeudalAge;
+          dwCastleAge := CastleAge;
+          dwImperialAge := ImperialAge;
+          byMapExplored := MapExplored;
+          byResearchCount := ResearchCount;
+          byResearchPercent := ResearchPercent;
+        end;
+        Achievement.lpTechnologyStats := @TechnologyStats;
+
+        { fill society stats struct }
+        with SocietyStats, P.Achievement.SocietyStats do
+        begin
+          wSocietyScore := SocietyScore;
+          byTotalWonders := TotalWonders;
+          byTotalCastles := TotalCastles;
+          byRelicsCaptured := RelicsCaptured;
+          wVillagerHigh := VillagerHigh;
+        end;
+        Achievement.lpSocietyStats := @SocietyStats;
+
+        { fill player's achievement struct }
+        with Achievement, P.Achievement do
+        begin
+          bVictory := Victory;
+          bMedal := Medal;
+          dwResult := Ord(Result);
+          dwTotalScore := TotalScore;
+        end;
+        Player.lpAchievement := @Achievement;
+      end;
+
       with Player, P do
       begin
         CpyMem(szName, Name);
@@ -637,7 +825,7 @@ begin
         bOwner := Owner;
         dwCivId := Ord(CivId);
         CpyMem(szCivilization, Civ);
-        dwColorId := ColorId;
+        byColor := Color;
         bIsCooping := IsCooping;
         dwFeudalTime := FeudalTime;
         dwCastleTime := CastleTime;
@@ -687,7 +875,7 @@ begin
       with ChatMessage do
       begin
         dwTime := M.Time;
-        dwColorId := M.ColorId;
+        byColor := M.Color;
         CpyMem(szMessage, M.Msg);
       end;
       if not lpEnumFunc(@ChatMessage, lParam) then Break;
@@ -730,7 +918,7 @@ begin
       with ChatMessage do
       begin
         dwTime := M.Time;
-        dwColorId := M.ColorId;
+        byColor := M.Color;
         CpyMem(szMessage, M.Msg);
       end;
       if not lpEnumFunc(@ChatMessage, lParam) then Break;

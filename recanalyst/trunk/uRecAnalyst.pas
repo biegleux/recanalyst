@@ -33,8 +33,7 @@ unit uRecAnalyst;
 interface
 
 uses
-  Classes, Windows, SysUtils, Contnrs, uRecAnalystBase, uRecAnalystConsts,
-  MemStream;
+  Classes, Windows, SysUtils, Contnrs, uRecAnalystBase, uRecAnalystStructs, MemStream;
 
 type
   TBuildingList = class;
@@ -59,6 +58,72 @@ type
     property StartingAgeString: AnsiString read GetStartingAge;
   end;
 
+  { TMilitaryStats }
+  TMilitaryStats = class(TObject)
+  public
+    MilitaryScore: Word;
+    UnitsKilled: Word;
+    UnitsLost: Word;
+    BuildingsRazed: Word;
+    BuildingsLost: Word;
+    UnitsConverted: Word;
+    constructor Create();
+  end;
+
+  { TEconomyStats }
+  TEconomyStats = class(TObject)
+  public
+    EconomyScore: Word;
+    FoodCollected: LongWord;
+    WoodCollected: LongWord;
+    StoneCollected: LongWord;
+    GoldCollected: LongWord;
+    TributeSent: Word;
+    TributeRcvd: Word;
+    TradeProfit: Word;
+    RelicGold: Word;
+    constructor Create();
+  end;
+
+  { TTechnologyStats }
+  TTechnologyStats = class(TObject)
+  public
+    TechnologyScore: Word;
+    FeudalAge: LongWord;
+    CastleAge: LongWord;
+    ImperialAge: LongWord;
+    MapExplored: Byte;
+    ResearchCount: Byte;
+    ResearchPercent: Byte;
+    constructor Create();
+  end;
+
+  { TSocietyStats }
+  TSocietyStats = class(TObject)
+  public
+    SocietyScore: Word;
+    TotalWonders: Byte;
+    TotalCastles: Byte;
+    RelicsCaptured: Byte;
+    VillagerHigh: Word;
+    constructor Create();
+  end;
+
+  { TAchievement }
+  TAchievement = class(TObject)
+  public
+    Victory: Boolean;
+    Medal: Boolean;
+    Result: TGameResult;
+    TotalScore: LongWord;
+    MilitaryStats: TMilitaryStats;
+    EconomyStats: TEconomyStats;
+    TechnologyStats: TTechnologyStats;
+    SocietyStats: TSocietyStats;
+    constructor Create();
+    destructor Destroy(); override;
+  end;
+
   { TPlayer }
   TPlayer = class(TObject)
   private
@@ -70,8 +135,7 @@ type
     Team: Integer;
     Owner: Boolean;
     CivId: TCivilization;
-    ColorId: Integer;
-    Color: Cardinal;
+    Color: Byte;
     IsCooping: Boolean;
     FeudalTime: Integer;
     CastleTime: Integer;
@@ -80,9 +144,9 @@ type
     DisconnectTime: Integer;
     Buildings: TBuildingList;
     InitialState: TInitialState;
+    Achievement: TAchievement;
     constructor Create();
     destructor Destroy(); override;
-    procedure SetColor(const AIndex: Integer);
     property Civ: AnsiString read GetCiv;
   end;
 
@@ -141,6 +205,20 @@ type
     property VictoryString: AnsiString read GetVictoryString;
   end;
 
+  { TExtraGameData }
+  TExtraGameData = class(TObject)
+  public
+    HasData: Boolean;  { true, if we have extra data (incl. achievements)
+                         (ver >= UP 1.4 (RC2), mode Multiplayer) }
+    AllTechs: Boolean;
+    AllowCheats: Boolean;
+    TeamTogether: Boolean;
+    LockSpeed: Boolean;
+    Complete: Boolean;  { true, if achievements are complete }
+    constructor Create();
+    procedure Clear();
+  end;
+
   { TGameSettings }
   TGameSettings = class(TObject)
   private
@@ -174,6 +252,9 @@ type
     ScFileName: AnsiString;
     GameVersion: TGameVersion;
     Victory: TVictory;
+    GameMode: TGameMode;
+    Extra: TExtraGameData;
+    sGameSubVersion: AnsiString;
     constructor Create();
     destructor Destroy(); override;
     procedure Clear();
@@ -258,7 +339,7 @@ type
   { TChatMessage }
   TChatMessage = class(TObject)
     Time: Integer;
-    ColorId: Integer;
+    Color: Byte;
     Msg: AnsiString;
     constructor Create();
   end;
@@ -283,6 +364,7 @@ type
 
   TRecAnalyst = class(TObject)
   private
+    fFileName: String;
     fIsMgl: Boolean;
     fIsMgx: Boolean;
     fIsMgz: Boolean;
@@ -292,7 +374,7 @@ type
     fMapData: array of array of Integer;
     fMapWidth: Longint;
     fMapHeight: Longint;
-    fAnalyzeTime: Integer;
+    fAnalyzeTime: LongWord;
 
     GaiaObjects: TObjectList;
     PlayerObjects: TObjectList;
@@ -305,14 +387,25 @@ type
     next_pos: Int32;
     {$IFDEF EXTENDED}objectives_pos: Int64;{$ENDIF}
 
-    function ExtractStreams(): Boolean;
-    function AnalyzeHeader(): Boolean;
-    function AnalyzeBody(): Boolean;
+    procedure Reset();
+    procedure ExtractStreams();
+    procedure AnalyzeHeader();
+    procedure AnalyzeBody();
+    procedure BuildTeams();
     procedure PostAnalyze();
     procedure ReadPlayerInfoBlockEx(const num_player: Byte);
     procedure ReadPlayerInfoBlock(const num_player: Byte);
+  protected
+    procedure ProcessPreGameChat(const buff: array of Char);
+    procedure ProcessInGameChat(const buff: array of Char; time_cnt: Int32);
+    procedure ProcessResignCommand(const resign_cmd: TResignCmdDataStruct; time_cnt: Int32);
+    procedure ProcessResearchCommand(const research_cmd: TResearchCmdDataStruct; time_cnt: Int32);
+    procedure ProcessHumanTrainUnitCommand(human_train_unit_cmd: THumanTrainUnitCmdDataStruct);
+    procedure ProcessPCTrainUnitCommand(unit_type_id: Word);
+    procedure ProcessConstructionCommand(player_id, building_type_id: Word);
+    procedure ProcessTributeCommand(const tribute_cmd: TTributeCmdDataStruct; time_cnt: Int32);
+    procedure ProcessGameDataCommand(const game_data_cmd: TGameDataStruct);
   public
-    FileName: String;
     GameSettings: TGameSettings;
     Players: TPlayerList;
     Teams: TTeamList;
@@ -324,17 +417,16 @@ type
     {$IFDEF EXTENDED}CommentString: AnsiString;{$ENDIF}
     constructor Create();
     destructor Destroy(); override;
-    class function GameTimeToString(const Time: Integer): AnsiString;
-    function Analyze(): Boolean;
-    procedure BuildTeams();
+    class function GameTimeToString(Time: Integer): AnsiString;
+    procedure Analyze();
     function GenerateMap(const Width: Integer; const Height: Integer): TMemoryStream;
-    procedure Reset();
     {$IFDEF EXTENDED}
     procedure Build(const FileName: String);
     function AddComment(const Comment: AnsiString = ''): Boolean;
     {$ENDIF}
     class function ErrorCodeToString(const ErrorCode: Integer): String;
-    property AnalyzeTime: Integer read fAnalyzeTime;
+    property FileName: String read fFileName write fFileName;
+    property AnalyzeTime: LongWord read fAnalyzeTime;
     property Analyzed: Boolean read fAnalyzed;
     {$IFDEF EXTENDED}
     property KeepStreams: Boolean read fKeepStreams write fKeepStreams;
@@ -544,7 +636,7 @@ constructor TChatMessage.Create();
 begin
   inherited Create();
   Time := 0;
-  ColorId := 0;
+  Color := 0;
   Msg := '';
 end;
 
@@ -572,6 +664,80 @@ begin
     Result := STARTING_AGES[StartingAge];
 end;
 
+{ TMilitaryStats }
+constructor TMilitaryStats.Create();
+begin
+  inherited Create();
+  MilitaryScore := 0;
+  UnitsKilled := 0;
+  UnitsLost := 0;
+  BuildingsRazed := 0;
+  BuildingsLost := 0;
+  UnitsConverted := 0;
+end;
+
+{ TEconomyStats }
+constructor TEconomyStats.Create();
+begin
+  inherited Create();
+  EconomyScore := 0;
+  FoodCollected := 0;
+  WoodCollected := 0;
+  StoneCollected := 0;
+  GoldCollected := 0;
+  TributeSent := 0;
+  TributeRcvd := 0;
+  TradeProfit := 0;
+  RelicGold := 0;
+end;
+
+{ TTechnologyStats }
+constructor TTechnologyStats.Create();
+begin
+  inherited Create();
+  TechnologyScore := 0;
+  FeudalAge := 0;
+  CastleAge := 0;
+  ImperialAge := 0;
+  MapExplored := 0;
+  ResearchCount := 0;
+  ResearchPercent := 0;
+end;
+
+{ TSocietyStats }
+constructor TSocietyStats.Create();
+begin
+  inherited Create();
+  SocietyScore := 0;
+  TotalWonders := 0;
+  TotalCastles := 0;
+  RelicsCaptured := 0;
+  VillagerHigh := 0;
+end;
+
+{ TAchievement }
+constructor TAchievement.Create();
+begin
+  inherited Create();
+  Victory := False;
+  Medal := False;
+  Result := Low(TGameResult);
+  TotalScore := 0;
+  MilitaryStats := TMilitaryStats.Create();
+  EconomyStats := TEconomyStats.Create();
+  TechnologyStats := TTechnologyStats.Create();
+  SocietyStats := TSocietyStats.Create();
+end;
+
+destructor TAchievement.Destroy();
+begin
+  MilitaryStats.Free();
+  EconomyStats.Free();
+  TechnologyStats.Free();
+  SocietyStats.Free();
+  inherited Destroy();
+end;
+
 { TPlayer }
 constructor TPlayer.Create();
 begin
@@ -582,8 +748,7 @@ begin
   Team := -1;
   Owner := False;
   CivId := cNone;
-  ColorId := -1;
-  Color := $00FFFFFF;
+  Color := 0;
   IsCooping := False;
   FeudalTime := 0;
   CastleTime := 0;
@@ -592,12 +757,14 @@ begin
   DisconnectTime := 0;
   Buildings := TBuildingList.Create();
   InitialState := TInitialState.Create();
+  Achievement := TAchievement.Create();
 end;
 
 destructor TPlayer.Destroy();
 begin
   Buildings.Free();
   InitialState.Free();
+  Achievement.Free();
   inherited Destroy();
 end;
 
@@ -606,12 +773,6 @@ begin
   if (CivId in [Low(CIVS)..High(CIVS)]) then
     Result := CIVS[CivId]
   else Result := CIVS[cNone];
-end;
-
-procedure TPlayer.SetColor(const AIndex: Integer);
-begin
-  if (AIndex in [Low(COLORS)..High(COLORS)]) then
-    Color := COLORS[AIndex];
 end;
 
 { TPlayerList }
@@ -766,11 +927,29 @@ begin
   end;
 end;
 
+{ TExtraGameData }
+constructor TExtraGameData.Create();
+begin
+  inherited Create();
+  Clear();
+end;
+
+procedure TExtraGameData.Clear();
+begin
+  HasData := False;
+  AllTechs := False;
+  AllowCheats := False;
+  TeamTogether := False;
+  LockSpeed := False;
+  Complete := False;
+end;
+
 { TGameSettings }
 constructor TGameSettings.Create();
 begin
   inherited Create();
   Victory := TVictory.Create();
+  Extra := TExtraGameData.Create();
   Clear();
 end;
 
@@ -778,6 +957,7 @@ destructor TGameSettings.Destroy();
 begin
   Owner := nil;
   Victory.Free();
+  Extra.Free();
   inherited Destroy();
 end;
 
@@ -805,6 +985,7 @@ begin
   IsFFA := False;
   Owner := nil;
   ScFileName := '';
+  sGameSubVersion := '';
   Victory.Clear();
 end;
 
@@ -894,6 +1075,7 @@ begin
   GaiaObjects := TObjectList.Create();
   PlayerObjects := TObjectList.Create();
   fMapImage := TMemoryStream.Create();
+  fFileName := '';
   Reset();
 end;
 
@@ -928,7 +1110,6 @@ begin
   fMapHeight := 0;
   SetLength(fMapData, 0);
   fMapData := nil;
-  FileName := '';
   fAnalyzeTime := 0;
   header_len := 0;
   next_pos := 0;
@@ -953,33 +1134,18 @@ begin
   fAnalyzed := False;
 end;
 
-class function TRecAnalyst.GameTimeToString(const Time: Integer): AnsiString;
+class function TRecAnalyst.GameTimeToString(Time: Integer): AnsiString;
 var
-  hour, minute, second: Integer;
-  s: String;
+  Hours, Minutes, Seconds: Integer;
 begin
-  if (Time = 0) then
-  begin
-    Result := '';
-    Exit;
-  end;
-  hour := Time div 1000 div 3600;
-  minute := Time div 1000 div 60 mod 60;
-  second := Time div 1000 mod 60;
-
-  Result := '';
-  s := IntToStr(hour);
-  if (hour < 10) then s := '0' + s;
-  Result := Result + AnsiString(s) + ':';
-  s := IntToStr(minute);
-  if (minute < 10) then s := '0' + s;
-  Result := Result + AnsiString(s) + ':';
-  s := IntToStr(second);
-  if (second < 10) then s := '0' + s;
-  Result := Result + AnsiString(s);
+  if (Time < 0) then Time := 0;
+  Hours   := Time div 1000 div 3600;
+  Minutes := Time div 1000 div 60 mod 60;
+  Seconds := Time div 1000 mod 60;
+  Result := AnsiString(Format('%.2d:%.2d:%.2d', [Hours, Minutes, Seconds]));
 end;
 
-function TRecAnalyst.ExtractStreams(): Boolean;
+procedure TRecAnalyst.ExtractStreams();
 var
   ms, inStream: TMemoryStream;
   count: Int64;
@@ -989,16 +1155,14 @@ const
   MGZ_EXT = '.mgz';
   NO_HEADER = -15; // raw inflate
 begin
-  Result := False;
-
-  if (FileName = '') then
+  if (fFileName = '') then
     raise ERecAnalystException.Create(RECANALYST_NOFILE);
 
-  if (LowerCase(ExtractFileExt(FileName)) = MGL_EXT) then
+  if (LowerCase(ExtractFileExt(fFileName)) = MGL_EXT) then
     fIsMgl := True
-  else if (LowerCase(ExtractFileExt(FileName)) = MGX_EXT) then
+  else if (LowerCase(ExtractFileExt(fFileName)) = MGX_EXT) then
     fIsMgx := True
-  else if (LowerCase(ExtractFileExt(Filename)) = MGZ_EXT) then
+  else if (LowerCase(ExtractFileExt(fFilename)) = MGZ_EXT) then
   begin
     fIsMgx := True; fIsMgz := True;
   end else
@@ -1008,7 +1172,7 @@ begin
   inStream := TMemoryStream.Create();
   try
     try
-      ms.LoadFromFile(FileName);
+      ms.LoadFromFile(fFileName);
       ms.Seek(0, soFromBeginning);
 
       if (ms.Read(header_len, SizeOf(header_len)) < SizeOf(header_len)) then
@@ -1039,8 +1203,6 @@ begin
       count := ms.Size - header_len - SizeOf(header_len);
       if fIsMgx then count := count - SizeOf(next_pos);
       fBodyStream.CopyFrom(ms, count);
-
-      Result := True;
     except
       on ERecAnalystException do
         raise;
@@ -1061,7 +1223,7 @@ begin
   end;
 end;
 
-function TRecAnalyst.AnalyzeHeader(): Boolean;
+procedure TRecAnalyst.AnalyzeHeader();
 const
   constant2: array[0..7] of AnsiChar = (#$9A, #$99, #$99, #$99, #$99, #$99, #$F9, #$3F);
   separator: array[0..3] of AnsiChar = (#$9D, #$FF, #$FF, #$FF);
@@ -1096,7 +1258,6 @@ var
   num_unknown_data, num_float: Int32;
   terrain_id, elevation: Byte;
   desc_len, num_effect, num_selected_object, text_len, sound_len: Int32;
-  ChatMessage: TChatMessage;
   num_condition: Int32;
   team_indexes: array[0..7] of Byte;
   unknown25, victory_condition: Int32;
@@ -1105,8 +1266,9 @@ var
   num_data, num_couples, map_size_x2, map_size_y2, num_unknown_data2: Int32;
   subversion: Single;
   rounded_subversion: Double;
+  game_mode: Word;
 begin
-  FillChar(buff, SizeOf(buff), $00);
+  FillChar(buff, SizeOf(buff), 0);
   FillChar(buff256, SizeOf(buff256), #0);
   with fHeaderStream do
   begin
@@ -1138,7 +1300,9 @@ begin
     else if (version = VER_99) then
       GameSettings.GameVersion := gvAOCUP13
     else if (version = VER_9A) then
-      GameSettings.GameVersion := gvAOCUP14
+      GameSettings.GameVersion := gvAOCUP14 { 1.4 (RC1) }
+    else if (version = VER_9B) then
+      GameSettings.GameVersion := gvAOCUP14 { 1.4 (RC2) }
     else
       GameSettings.GameVersion := gvUnknown;
 
@@ -1157,6 +1321,25 @@ begin
           fIsUserPatch := True;
         end;
     end;
+
+    if (GameSettings.GameVersion = gvAOE2HD) then
+    begin
+      if (rounded_subversion = 11.80) then
+        GameSettings.sGameSubversion := '2.0'
+      else if (rounded_subversion = 11.90) then
+        GameSettings.sGameSubversion := '2.3'
+      else if (rounded_subversion = 11.91) then
+        GameSettings.sGameSubversion := '2.6' { or 2.5, using higher one }
+      else if (rounded_subversion = 11.93) then
+        GameSettings.sGameSubversion := '2.8'
+    end else if (GameSettings.GameVersion = gvAOCUP14) then
+    begin
+      if (version = VER_9A) then
+        GameSettings.sGameSubversion := 'RC1'
+      else if (version = VER_9B) then
+        GameSettings.sGameSubversion := 'RC2';
+    end;
+
     { getting Trigger_info position }
     Seek(-SizeOf(constant2), soFromEnd);
     trigger_info_pos := FindReverse(constant2);
@@ -1181,18 +1364,14 @@ begin
     ReadBool(lock_teams); { duplicated data, see lock_diplomacy }
     if fIsMgx then
     begin
-      i := MapById(map_id);
-      if (i <> -1) then
-      begin
-        GameSettings.Map := MAPS[i].Name;
-        if (map_id in miRealWorldMaps) then
-          GameSettings.MapStyle := msRealWorld
-        else if (map_id = miCustom) then
-          GameSettings.MapStyle := msCustom
-        else
-          GameSettings.MapStyle := msStandard;
-        GameSettings.MapId := map_id;
-      end;
+      GameSettings.MapId := map_id;
+      if (map_id in miRealWorldMaps) then
+        GameSettings.MapStyle := msRealWorld
+      else if (map_id = miCustom) then
+        GameSettings.MapStyle := msCustom
+      else
+        GameSettings.MapStyle := msStandard;
+      GameSettings.Map := MapIdToName(map_id);
     end;
     GameSettings.DifficultyLevel := TDifficultyLevel(difficulty);
     GameSettings.LockDiplomacy := lock_teams;
@@ -1301,7 +1480,7 @@ begin
       PopLimit := pop_limit;
       if fIsMgx then
       begin
-        LockDiplomacy := (lock_diplomacy = $01);
+        LockDiplomacy := (lock_diplomacy = 1);
         GameType := TGameType(game_type);
       end;
     end;
@@ -1312,21 +1491,7 @@ begin
       for i := 0 to num_chat - 1 do
       begin
         ReadString(buff65536);
-        { zero-length chat exists }
-        if (buff65536[0] = #0) then Continue;
-        if (buff65536[0] = '@') and (buff65536[1] = '#') and (buff65536[2] >= '1') and (buff65536[2] <= '8') then
-        begin
-          //buff65536[chat_len] := #0;
-          ChatMessage := TChatMessage.Create();
-          // buff65536[2] is not really player index
-          // TODO may be wrong if someone enter/leave game, or coop, no workaround
-          // exists, as players may have same names
-          Player := Players.GetPlayerByIndex(StrToIntDef(String(buff65536[2]), 0));
-          if Assigned(Player) then
-            ChatMessage.ColorId := Player.ColorId;
-          ChatMessage.Msg := Copy(buff65536, 4, Length(buff65536));
-          PreGameChatMessages.Add(ChatMessage);
-        end;
+        ProcessPreGameChat(buff65536);
       end;
     end;
     { skip AI_info if exists }
@@ -1358,8 +1523,14 @@ begin
     ReadWord(rec_player_ref);
     ReadChar(num_player);
     Dec(num_player);
+    if fIsMgx then Seek(2);
+    ReadWord(game_mode);
 
     GameSettings.GameSpeed := TGameSpeed(game_speed);
+    if (game_mode = 1) then
+      GameSettings.GameMode := gmSinglePlayer
+    else
+      GameSettings.GameMode := gmMultiPlayer;
 
     Player := Players.GetPlayerByIndex(rec_player_ref);
     if Assigned(Player) then
@@ -1377,7 +1548,7 @@ begin
     Inc(num_player);
 
     { getting map }
-    Seek(62);
+    Seek(58);
     SeekIf(fIsMgl, -2);
     ReadInt32(map_size_x);
     ReadInt32(map_size_y);
@@ -1441,30 +1612,25 @@ begin
       if (buff65536[0] <> #0) and not GameSettings.IsScenario then
         GameSettings.ObjectivesString := buff65536;
     end;
-    Result := True;
   end;
 end;
 
-function TRecAnalyst.AnalyzeBody(): Boolean;
+procedure TRecAnalyst.AnalyzeBody();
 var
   time_cnt: Int32;
-  m_body_len, i, idx: Integer;
-  od_type, command, chat_len, time: Int32;
+  m_body_len: Integer;
+  od_type, command, time: Int32;
   unknown, length: Int32;
-  cmd, player_number, player_index, ver, disconnected: Byte;
+  cmd, ver: Byte;
   buff256: array[0..MAXBYTE] of AnsiChar;
-  Player, PlayerFrom, PlayerTo: TPlayer;
-  player_id_from, player_id_to, resource_id: Byte;
-  amount_tributed, market_fee: Single;
-  player_id, research_id: Word;
-  object_id: Int32;
-  unit_type_id, unit_num, building_type_id: Word;
+  player_id: Word;
+  unit_type_id, building_type_id: Word;
   next_command_block: Int32;
-  Res: TResearch;
-  Tribute: TTribute;
-  TrainedUnit: TTrainedUnit;
-  Building: TBuilding;
-  ChatMessage: TChatMessage;
+  human_train_unit_cmd: THumanTrainUnitCmdDataStruct;
+  tribute_cmd: TTributeCmdDataStruct;
+  resign_cmd: TResignCmdDataStruct;
+  research_cmd: TResearchCmdDataStruct;
+  game_data_cmd: TGameDataStruct;
 begin
   time_cnt := Ord(GameSettings.GameSpeed);
   m_body_len := fBodyStream.Size;
@@ -1509,26 +1675,8 @@ begin
             else if (command = -1) then
             begin
               { Chat }
-              ReadInt32(chat_len);
-              ReadBuffer(buff256, chat_len);
-              if (buff256[0] = '@') and (buff256[1] = '#') and (buff256[2] >= '1') and (buff256[2] <= '8') then
-              begin
-                buff256[chat_len] := #0;
-                if (buff256[3] = '-') and (buff256[4] = '-') and
-                   (buff256[chat_len - 3] = '-') and (buff256[chat_len - 2] = '-') then
-                begin
-                  // skip messages like "--Warning: You are being under attack... --"
-                end else
-                begin
-                  ChatMessage := TChatMessage.Create();
-                  ChatMessage.Time := time_cnt;
-                  Player := Players.GetPlayer(StrToIntDef(String(buff256[2]), 0) - 1);
-                  if Assigned(Player) then
-                    ChatMessage.ColorId := Player.ColorId;
-                  ChatMessage.Msg := Copy(buff256, 4, System.Length(buff256));
-                  InGameChatMessages.Add(ChatMessage);
-                end;
-              end;
+              ReadString(buff256);
+              ProcessInGameChat(buff256, time_cnt);
             end;
           end;
         $02:
@@ -1547,140 +1695,35 @@ begin
             ReadChar(cmd);
             Seek(-1);
             case cmd of
-              $0B:
+              $0B: { player resign }
                 begin
-                  { player resign }
                   Seek(1);
-                  ReadChar(player_index);
-                  ReadChar(player_number);
-                  ReadChar(disconnected);
-                  if (player_number in [1..Players.Count]) then
-                  begin
-                    Player := Players[player_number - 1];
-                    if Assigned(Player) then
-                    begin
-                      if (disconnected = 1) and (Player.DisconnectTime = 0) then
-                      begin
-                        ChatMessage := TChatMessage.Create();
-                        ChatMessage.Time := time_cnt;
-                        ChatMessage.Msg := AnsiString(Format(c_disconnected, [Player.Name]));
-                        Player.DisconnectTime := time_cnt;
-                        InGameChatMessages.Add(ChatMessage);
-                      end else if (disconnected <> 1) and (Player.ResignTime = 0) then
-                      begin
-                        ChatMessage := TChatMessage.Create();
-                        ChatMessage.Time := time_cnt;
-                        ChatMessage.Msg := AnsiString(Format(c_resigned, [Player.Name]));
-                        Player.ResignTime := time_cnt;
-                        InGameChatMessages.Add(ChatMessage);
-                      end;
-                    end;
-                  end;
+                  ReadBuffer(resign_cmd, SizeOf(resign_cmd));
+                  ProcessResignCommand(resign_cmd, time_cnt);
                   Seek(length - 4);
                 end;
-              $65:
+              $65: { research }
                 begin
-                  { researches }
-                  Seek(8);
-                  ReadWord(player_id);
-                  ReadWord(research_id);
-                  Player := Players.GetPlayerByIndex(player_id);
-                  if Assigned(Player) then
-                  begin
-                    case research_id of
-                      101:
-                        begin
-                          { feudal time }
-                          Player.FeudalTime := time_cnt + 130000; { + research time (2:10) }
-                        end;
-                      102:
-                        begin
-                          { castle time }
-                          if (Player.CivId = cPersians) then
-                            { about 10% less, but calculated as 160s / 1.10 despite of -10% = 144s }
-                            Player.CastleTime := time_cnt + Round(160000 / 1.10)
-                          else
-                            Player.CastleTime := time_cnt + 160000;
-                        end;
-                      103:
-                        begin
-                          { imperial time }
-                          if (Player.CivId = cPersians) then
-                            { about 15% less, but calculated as 190s / 1.15 despite of -15% = 161,5s }
-                            Player.ImperialTime := time_cnt + Round(190000 / 1.15)
-                          else
-                            Player.ImperialTime := time_cnt + 190000;
-                        end;
-                    end;
-                    { remember this is the time player has just started to research
-                      the particular technology, repetitious researching may occure,
-                      here we are asking about it }
-                    idx := -1;
-                    for i := Researches.Count - 1 downto 0 do
-                    begin
-                      Res := Researches[i] as TResearch;
-                      if (Res.Id = research_id) and (Res.Player.Index = player_id) then
-                      begin
-                        idx := i;
-                        Break;
-                      end;
-                    end;
-                    if (idx = -1) then
-                    begin
-                      { just add this research }
-                      Res := TResearch.Create();
-                      Res.Id := research_id;
-                      Res.Time := time_cnt;
-                      Res.Player := Players.GetPlayerByIndex(player_id);
-                      Researches.Add(Res);
-                    end else
-                    begin
-                      Res := Researches[idx] as TResearch;
-                      { remember data in body section are not necessarily time-sorted
-                        (rarely, but may occure) that's why we are comparing times }
-                      if (Res.Time < time_cnt) then
-                        Res.Time := time_cnt;
-                    end;
-                  end;
-                  Seek(length - 12);
-                end;
-              $77:
-                begin
-                  { training unit }
                   Seek(4);
-                  ReadInt32(object_id);
-                  ReadWord(unit_type_id);
-                  ReadWord(unit_num);
-                  FixUnitTypeId(unit_type_id);
-                  TrainedUnit := Units.GetUnit(unit_type_id);
-                  if Assigned(TrainedUnit) then
-                    Inc(TrainedUnit.Count, unit_num)
-                  else begin
-                    TrainedUnit := TTrainedUnit.Create();
-                    TrainedUnit.Id := unit_type_id;
-                    TrainedUnit.Count := unit_num;
-                    Units.Add(TrainedUnit);
-                  end;
+                  ReadBuffer(research_cmd, SizeOf(research_cmd));
+                  ProcessResearchCommand(research_cmd, time_cnt);
                   Seek(length - 12);
                 end;
-              $64:
+              $77: { training unit }
                 begin
-                  { pc trains unit }
+                  Seek(4);
+                  ReadBuffer(human_train_unit_cmd, SizeOf(human_train_unit_cmd));
+                  ProcessHumanTrainUnitCommand(human_train_unit_cmd);
+                  Seek(length - 12);
+                end;
+              $64: { pc trains unit }
+                begin
                   Seek(10);
                   ReadWord(unit_type_id);
-                  FixUnitTypeId(unit_type_id);
-                  TrainedUnit := Units.GetUnit(unit_type_id);
-                  if Assigned(TrainedUnit) then
-                    Inc(TrainedUnit.Count)
-                  else begin
-                    TrainedUnit := TTrainedUnit.Create();
-                    TrainedUnit.Id := unit_type_id;
-                    TrainedUnit.Count := 1;
-                    Units.Add(TrainedUnit);
-                  end;
+                  ProcessPCTrainUnitCommand(unit_type_id);
                   Seek(length - 12);
                 end;
-              $66:
+              $66: { construction }
                 begin
                   Seek(2);
                   { player_id }
@@ -1688,48 +1731,24 @@ begin
                   Seek(8);
                   { building_type_id unit_type_id }
                   ReadWord(building_type_id);
-                  FixBuildingTypeId(building_type_id);
-                  Player := Players.GetPlayerByIndex(player_id);
-                  if Assigned(Player) then
-                  begin
-                    Building := Player.Buildings.GetBuilding(building_type_id);
-                    if Assigned(Building) then
-                      Inc(Building.Count)
-                    else begin
-                      Building := TBuilding.Create();
-                      Building.Id := building_type_id;
-                      Building.Count := 1;
-                      Player.Buildings.Add(Building);
-                    end;
-                  end;
+                  ProcessConstructionCommand(player_id, building_type_id);
                   Seek(length - 14);
                 end;
-              $6C:
+              $6C: { tribute }
                 begin
-                  { tributing }
                   Seek(1);
-                  ReadChar(player_id_from);
-                  ReadChar(player_id_to);
-                  ReadChar(resource_id);
-                  ReadFloat(amount_tributed);
-                  ReadFloat(market_fee);
-                  PlayerFrom := Players.GetPlayerByIndex(player_id_from);
-                  PlayerTo := Players.GetPlayerByIndex(player_id_to);
-                  if Assigned(PlayerFrom) and Assigned(PlayerTo) then
-                  begin
-                    Tribute := TTribute.Create();
-                    Tribute.Time       := time_cnt;
-                    Tribute.PlayerFrom := PlayerFrom;
-                    Tribute.PlayerTo   := PlayerTo;
-                    Tribute.ResourceId := TResourceId(resource_id);
-                    Tribute.Amount     := Floor(amount_tributed);
-                    Tribute.Fee        := market_fee;
-                    Tributes.Add(Tribute);
-                  end;
+                  ReadBuffer(tribute_cmd, SizeOf(tribute_cmd));
+                  ProcessTributeCommand(tribute_cmd, time_cnt);
                   Seek(length - 12);
                 end;
               $03, 78, $00, $75, $6F, $10: Seek(length);
               $20: Seek(length); { save chapter }
+              $FF: { exists only in UP 1.4 RC2 multiplayer mode }
+                begin
+                  Seek(1);
+                  ReadBuffer(game_data_cmd, SizeOf(game_data_cmd));
+                  ProcessGameDataCommand(game_data_cmd);
+                end;
               else Seek(length);
             end;
             Seek(4);
@@ -1756,23 +1775,21 @@ begin
     end;  { endwhile }
     GameSettings.PlayTime := time_cnt;
   end;
-  Result := True;
 end;
 
-function TRecAnalyst.Analyze(): Boolean;
+procedure TRecAnalyst.Analyze();
 var
-  StartTime: DWORD;
+  StartTime: LongWord;
 begin
-  Result := False;
   try
+    Reset();
     StartTime := GetTickCount();
-    if not ExtractStreams() then Exit;
-    if not AnalyzeHeader() then Exit;
-    if not AnalyzeBody() then Exit;
+    ExtractStreams();
+    AnalyzeHeader();
+    AnalyzeBody();
     PostAnalyze();
     fAnalyzed := True;
     fAnalyzeTime := GetTickCount() - StartTime;
-    Result := True;
   finally
     {$IFDEF EXTENDED}if not fKeepStreams then{$ENDIF}
     begin
@@ -1845,6 +1862,7 @@ var
   Graphics, PngGraphics: TGPGraphics;
 
   GoldBrush, StoneBrush, CliffBrush, RelicBrush, FoodBrush: TGPSolidBrush;
+  PlayerColor: COLORREF;
   PlayerBrush: TGPSolidBrush;
   PlayerPen: TGPPen;
 
@@ -1960,8 +1978,12 @@ begin
         if Player.IsCooping then Continue;
         with Player.InitialState do
         begin
-          PlayerPen := TGPPen.Create(ColorRefToARGB(Player.Color));
-          PlayerBrush := TGPSolidBrush.Create(ColorRefToARGB(Player.Color));
+          if (Player.Color - 1 in [Low(PLAYER_COLORS)..High(PLAYER_COLORS)]) then
+            PlayerColor := PLAYER_COLORS[Player.Color - 1]
+          else
+            PlayerColor := 0; { black }
+          PlayerPen := TGPPen.Create(ColorRefToARGB(PlayerColor));
+          PlayerBrush := TGPSolidBrush.Create(ColorRefToARGB(PlayerColor));
           try
             Graphics.DrawEllipse(PlayerPen, MakeRect(Rect(Position.X - 9,
               Position.Y - 9, Position.X + 9, Position.Y + 9)));
@@ -1984,7 +2006,11 @@ begin
       UO := PlayerObjects[i] as TUnitObject;
       if not Assigned(UO.Owner) then
         Continue;
-      PlayerBrush := TGPSolidBrush.Create(ColorRefToARGB(UO.Owner.Color));
+      if (UO.Owner.Color - 1 in [Low(PLAYER_COLORS)..High(PLAYER_COLORS)]) then
+        PlayerColor := PLAYER_COLORS[UO.Owner.Color - 1]
+      else
+        PlayerColor := 0; { black }
+      PlayerBrush := TGPSolidBrush.Create(ColorRefToARGB(PlayerColor));
       try
         Graphics.FillRectangle(PlayerBrush, MakeRect(Rect(UO.Position.X - 1,
           UO.Position.Y - 1, UO.Position.X + 1, UO.Position.Y + 1)));
@@ -2208,12 +2234,23 @@ begin
   { fix pop limit for UserPatch }
   if (fIsUserPatch) then
     GameSettings.PopLimit := 25 * GameSettings.PopLimit;
+
+  { fix color id's for pre-game chat messages, see ProcessPreGameChat }
+  for i := 0 to PreGameChatMessages.Count - 1 do
+  begin
+    ChatMessage := PreGameChatMessages[i] as TChatMessage;
+    Player := Players.GetPlayerByIndex(ChatMessage.Color);
+    if Assigned(Player) then
+      ChatMessage.Color := Player.Color
+    else
+      ChatMessage.Color := 0;
+  end;
 end;
 {$IFDEF EXTENDED}
 procedure TRecAnalyst.Build(const FileName: String);
 var
   outStream: TMemoryStream;
-  header_len: longint;
+  header_len: Longint;
   hs: TMemoryStream;
 const
   NO_HEADER = -15; // raw inflate
@@ -2362,7 +2399,6 @@ begin
           if (Assigned(P)) and (P <> Player) and (P.CivId <> cNone) then
           begin
             Player.CivId := P.CivId;
-            Player.ColorId := P.ColorId;
             Player.Color := P.Color;
             Player.Team := P.Team; { required }
             Player.IsCooping := True;
@@ -2403,8 +2439,7 @@ begin
           with Player do
           begin
             CivId := TCivilization(civilization);
-            ColorId := player_color;
-            SetColor(player_color);
+            Color := player_color + 1;
             InitialState.Position.X := Round(init_camera_pos_x);
             InitialState.Position.Y := Round(init_camera_pos_y);
             InitialState.Food := Round(food);
@@ -2643,7 +2678,6 @@ begin
       if (Assigned(P)) and (P <> Player) and (P.CivId <> cNone) then
       begin
         Player.CivId := P.CivId;
-        Player.ColorId := P.ColorId;
         Player.Color := P.Color;
         Player.Team := P.Team; { required }
         Player.IsCooping := True;
@@ -2686,8 +2720,7 @@ begin
       with Player do
       begin
         CivId := TCivilization(civilization);
-        ColorId := player_color;
-        SetColor(player_color);
+        Color := player_color + 1;
         InitialState.Position.X := Round(init_camera_pos_x);
         InitialState.Position.Y := Round(init_camera_pos_y);
         InitialState.Food := Round(food);
@@ -2717,6 +2750,290 @@ begin
     Result := ErrorMessages[ErrorCode];
   except
     Result := '';
+  end;
+end;
+
+procedure TRecAnalyst.ProcessPreGameChat(const buff: array of AnsiChar);
+var
+  ChatMessage: TChatMessage;
+  //Player: TPlayer;
+begin
+  { NOTE: while we are reading pre-game chat, we do not know players color yet,
+    that's why we store player's index in ColorId and we assign color ids in PostAnalyze. }
+
+  { zero-length chat exists }
+  if (buff[0] = #0) then Exit;
+  if (buff[0] = '@') and (buff[1] = '#') {and (buff[2] >= '1') and (buff[2] <= '8')} then
+  begin
+    ChatMessage := TChatMessage.Create();
+    // buff65536[2] is not really player index
+    // TODO may be wrong if someone enters/leaves game, or coop, no workaround
+    // exists, as players may have same names
+    ChatMessage.Color := StrToIntDef(String(buff[2]), -1);
+    {Player := Players.GetPlayerByIndex(StrToIntDef(String(buff[2]), 0));
+    if Assigned(Player) then
+      ChatMessage.ColorId := Player.Index;}
+    ChatMessage.Msg := Copy(buff, 4, Length(buff));
+    PreGameChatMessages.Add(ChatMessage);
+  end;
+end;
+
+procedure TRecAnalyst.ProcessInGameChat(const buff: array of AnsiChar; time_cnt: Int32);
+var
+  ChatMessage: TChatMessage;
+  Player: TPlayer;
+  ChatLen: Integer;
+begin
+  { "@#0<Messenger> nick: msg" chat messages exist, UP spectators? }
+  if (buff[0] = '@') and (buff[1] = '#') and (buff[2] >= '0') and (buff[2] <= '8') then
+  begin
+    // skip messages like "--Warning: You are being attacked by... --"
+    ChatLen := Length(AnsiString(buff));
+    if (buff[2] <> '0') and (buff[3] = '-') and (buff[4] = '-') and
+       (buff[ChatLen - 2] = '-') and (buff[ChatLen - 1] = '-') then
+      Exit;
+    ChatMessage := TChatMessage.Create();
+    ChatMessage.Time := time_cnt;
+    Player := Players.GetPlayer(StrToIntDef(String(buff[2]), 0) - 1);
+    if Assigned(Player) then
+      ChatMessage.Color := Player.Color;
+    ChatMessage.Msg := Copy(buff, 4, Length(buff));
+    InGameChatMessages.Add(ChatMessage);
+  end;
+end;
+
+procedure TRecAnalyst.ProcessResignCommand(const resign_cmd: TResignCmdDataStruct; time_cnt: Int32);
+var
+  Player: TPlayer;
+  ChatMessage: TChatMessage;
+begin
+  if (resign_cmd.player_number in [1..Players.Count]) then
+  begin
+    Player := Players[resign_cmd.player_number - 1];
+    if Assigned(Player) then
+    begin
+      if (resign_cmd.disconnected = 1) and (Player.DisconnectTime = 0) then
+      begin
+        ChatMessage := TChatMessage.Create();
+        ChatMessage.Time := time_cnt;
+        ChatMessage.Msg := AnsiString(Format(c_disconnected, [Player.Name]));
+        Player.DisconnectTime := time_cnt;
+        InGameChatMessages.Add(ChatMessage);
+      end else if (resign_cmd.disconnected <> 1) and (Player.ResignTime = 0) then
+      begin
+        ChatMessage := TChatMessage.Create();
+        ChatMessage.Time := time_cnt;
+        ChatMessage.Msg := AnsiString(Format(c_resigned, [Player.Name]));
+        Player.ResignTime := time_cnt;
+        InGameChatMessages.Add(ChatMessage);
+      end;
+    end;
+  end;
+end;
+
+procedure TRecAnalyst.ProcessResearchCommand(const research_cmd: TResearchCmdDataStruct; time_cnt: Int32);
+var
+  Player: TPlayer;
+  idx, i: Integer;
+  Research: TResearch;
+begin
+  Player := Players.GetPlayerByIndex(research_cmd.player_id);
+  if Assigned(Player) then
+  begin
+    case research_cmd.research_id of
+      riFeudalAge:
+        begin
+          Player.FeudalTime := time_cnt + 130000; { + research time (2:10) }
+        end;
+      riCastleAge:
+        begin
+          if (Player.CivId = cPersians) then
+            { about 10% less, but calculated as 160s / 1.10 despite of -10% = 144s }
+            Player.CastleTime := time_cnt + Round(160000 / 1.10)
+          else
+            Player.CastleTime := time_cnt + 160000;
+        end;
+      riImperialAge:
+        begin
+          if (Player.CivId = cPersians) then
+            { about 15% less, but calculated as 190s / 1.15 despite of -15% = 161,5s }
+            Player.ImperialTime := time_cnt + Round(190000 / 1.15)
+          else
+            Player.ImperialTime := time_cnt + 190000;
+        end;
+    end;
+    { remember this is the time player has just started to research
+      the particular technology, repetitious researching may occure,
+      here we are asking about it }
+    idx := -1;
+    for i := Researches.Count - 1 downto 0 do
+    begin
+      Research := Researches[i] as TResearch;
+      if (Research.Id = research_cmd.research_id) and (Research.Player.Index = research_cmd.player_id) then
+      begin
+        idx := i;
+        Break;
+      end;
+    end;
+    if (idx = -1) then
+    begin
+      { just add this research }
+      Research := TResearch.Create();
+      Research.Id := research_cmd.research_id;
+      Research.Time := time_cnt;
+      Research.Player := Players.GetPlayerByIndex(research_cmd.player_id);
+      Researches.Add(Research);
+    end else
+    begin
+      Research := Researches[idx] as TResearch;
+      { remember data in body section are not necessarily time-sorted
+        (rarely, but may occure) that's why we are comparing times }
+      if (Research.Time < time_cnt) then
+        Research.Time := time_cnt;
+    end;
+  end;
+end;
+
+procedure TRecAnalyst.ProcessHumanTrainUnitCommand(human_train_unit_cmd: THumanTrainUnitCmdDataStruct);
+var
+  TrainedUnit: TTrainedUnit;
+begin
+  FixUnitTypeId(human_train_unit_cmd.unit_type_id);
+  TrainedUnit := Units.GetUnit(human_train_unit_cmd.unit_type_id);
+  if Assigned(TrainedUnit) then
+    Inc(TrainedUnit.Count, human_train_unit_cmd.unit_num)
+  else begin
+    TrainedUnit := TTrainedUnit.Create();
+    TrainedUnit.Id := human_train_unit_cmd.unit_type_id;
+    TrainedUnit.Count := human_train_unit_cmd.unit_num;
+    Units.Add(TrainedUnit);
+  end;
+end;
+
+procedure TRecAnalyst.ProcessPCTrainUnitCommand(unit_type_id: Word);
+var
+  TrainedUnit: TTrainedUnit;
+begin
+  FixUnitTypeId(unit_type_id);
+  TrainedUnit := Units.GetUnit(unit_type_id);
+  if Assigned(TrainedUnit) then
+    Inc(TrainedUnit.Count)
+  else begin
+    TrainedUnit := TTrainedUnit.Create();
+    TrainedUnit.Id := unit_type_id;
+    TrainedUnit.Count := 1;
+    Units.Add(TrainedUnit);
+  end;
+end;
+
+procedure TRecAnalyst.ProcessConstructionCommand(player_id, building_type_id: Word);
+var
+  Player: TPlayer;
+  Building: TBuilding;
+begin
+  FixBuildingTypeId(building_type_id);
+  Player := Players.GetPlayerByIndex(player_id);
+  if Assigned(Player) then
+  begin
+    Building := Player.Buildings.GetBuilding(building_type_id);
+    if Assigned(Building) then
+      Inc(Building.Count)
+    else begin
+      Building := TBuilding.Create();
+      Building.Id := building_type_id;
+      Building.Count := 1;
+      Player.Buildings.Add(Building);
+    end;
+  end;
+end;
+
+procedure TRecAnalyst.ProcessTributeCommand(const tribute_cmd: TTributeCmdDataStruct; time_cnt: Int32);
+var
+  PlayerFrom, PlayerTo: TPlayer;
+  Tribute: TTribute;
+begin
+  PlayerFrom := Players.GetPlayerByIndex(tribute_cmd.player_id_from);
+  PlayerTo := Players.GetPlayerByIndex(tribute_cmd.player_id_to);
+  if Assigned(PlayerFrom) and Assigned(PlayerTo) then
+  begin
+    Tribute := TTribute.Create();
+    Tribute.Time       := time_cnt;
+    Tribute.PlayerFrom := PlayerFrom;
+    Tribute.PlayerTo   := PlayerTo;
+    Tribute.ResourceId := TResourceId(tribute_cmd.resource_id);
+    Tribute.Amount     := Floor(tribute_cmd.amount_tributed);
+    Tribute.Fee        := tribute_cmd.market_fee;
+    Tributes.Add(Tribute);
+  end;
+end;
+
+procedure TRecAnalyst.ProcessGameDataCommand(const game_data_cmd: TGameDataStruct);
+var
+  i: Integer;
+  PlayerStats: TPlayerStatsStruct;
+  Player: TPlayer;
+begin
+  with GameSettings.Extra do
+  begin
+    HasData := True;
+    AllTechs := game_data_cmd.AllTechs = 1;
+    AllowCheats := game_data_cmd.AllowCheats = 1;
+    TeamTogether := game_data_cmd.TeamTogether = 1;
+    LockSpeed := game_data_cmd.LockSpeed = 1;
+    Complete := game_data_cmd.Complete = 1;
+  end;
+
+  for i := 0 to Players.Count - 1 do
+  begin
+    PlayerStats := game_data_cmd.PlayerStats[i];
+    Player := Players[i];
+    // TODO otestovat ked je coop: if Player.isCooping then skip?
+    with Player.Achievement do
+    begin
+      Victory := PlayerStats.Victory = 1;
+      Medal := PlayerStats.Medal = 1;
+      Result := TGameResult(PlayerStats.Result);
+      TotalScore := PlayerStats.TotalScore;
+      with MilitaryStats do
+      begin
+        MilitaryScore := PlayerStats.MilitaryStats.MilitaryScore;
+        UnitsKilled := PlayerStats.MilitaryStats.UnitsKilled;
+        UnitsLost := PlayerStats.MilitaryStats.UnitsLost;
+        BuildingsRazed := PlayerStats.MilitaryStats.BuildingsRazed;
+        BuildingsLost := PlayerStats.MilitaryStats.BuildingsLost;
+        UnitsConverted := PlayerStats.MilitaryStats.UnitsConverted;
+      end;
+      with EconomyStats do
+      begin
+        EconomyScore := PlayerStats.EconomyStats.EconomyScore;
+        FoodCollected := PlayerStats.EconomyStats.FoodCollected;
+        WoodCollected := PlayerStats.EconomyStats.WoodCollected;
+        StoneCollected := PlayerStats.EconomyStats.StoneCollected;
+        GoldCollected := PlayerStats.EconomyStats.GoldCollected;
+        TributeSent := PlayerStats.EconomyStats.TributeSent;
+        TributeRcvd := PlayerStats.EconomyStats.TributeRcvd;
+        TradeProfit := PlayerStats.EconomyStats.TradeProfit;
+        RelicGold := PlayerStats.EconomyStats.RelicGold;
+      end;
+      with TechnologyStats do
+      begin
+        TechnologyScore := PlayerStats.TechnologyStats.TechnologyScore;
+        FeudalAge := PlayerStats.TechnologyStats.FeudalAge;
+        CastleAge := PlayerStats.TechnologyStats.CastleAge;
+        ImperialAge := PlayerStats.TechnologyStats.ImperialAge;
+        MapExplored := PlayerStats.TechnologyStats.MapExplored;
+        ResearchCount := PlayerStats.TechnologyStats.ResearchCount;
+        ResearchPercent := PlayerStats.TechnologyStats.ResearchPercent;
+      end;
+      with SocietyStats do
+      begin
+        SocietyScore := PlayerStats.SocietyStats.SocietyScore;
+        TotalWonders := PlayerStats.SocietyStats.TotalWonders;
+        TotalCastles := PlayerStats.SocietyStats.TotalCastles;
+        RelicsCaptured := PlayerStats.SocietyStats.RelicsCaptured;
+        VillagerHigh := PlayerStats.SocietyStats.VillagerHigh;
+      end;
+    end;
   end;
 end;
 
