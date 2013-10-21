@@ -1267,6 +1267,11 @@ var
   subversion: Single;
   rounded_subversion: Double;
   game_mode: Word;
+const
+  sv1180: Double = 11.80;
+  sv1190: Double = 11.90;
+  sv1191: Double = 11.91;
+  sv1193: Double = 11.93;
 begin
   FillChar(buff, SizeOf(buff), 0);
   FillChar(buff256, SizeOf(buff256), #0);
@@ -1324,13 +1329,13 @@ begin
 
     if (GameSettings.GameVersion = gvAOE2HD) then
     begin
-      if (rounded_subversion = 11.80) then
+      if (rounded_subversion = sv1180) then
         GameSettings.sGameSubversion := '2.0'
-      else if (rounded_subversion = 11.90) then
+      else if (rounded_subversion = sv1190) then
         GameSettings.sGameSubversion := '2.3'
-      else if (rounded_subversion = 11.91) then
+      else if (rounded_subversion = sv1191) then
         GameSettings.sGameSubversion := '2.6' { or 2.5, using higher one }
-      else if (rounded_subversion = 11.93) then
+      else if (rounded_subversion = sv1193) then
         GameSettings.sGameSubversion := '2.8'
     end else if (GameSettings.GameVersion = gvAOCUP14) then
     begin
@@ -3021,6 +3026,9 @@ begin
         FeudalAge := PlayerStats.TechnologyStats.FeudalAge;
         CastleAge := PlayerStats.TechnologyStats.CastleAge;
         ImperialAge := PlayerStats.TechnologyStats.ImperialAge;
+        if (FeudalAge = High(DWORD)) then FeudalAge := 0;
+        if (CastleAge = High(DWORD)) then CastleAge := 0;
+        if (ImperialAge = High(DWORD)) then ImperialAge := 0;
         MapExplored := PlayerStats.TechnologyStats.MapExplored;
         ResearchCount := PlayerStats.TechnologyStats.ResearchCount;
         ResearchPercent := PlayerStats.TechnologyStats.ResearchPercent;
