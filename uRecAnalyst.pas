@@ -74,10 +74,10 @@ type
   TEconomyStats = class(TObject)
   public
     EconomyScore: Word;
-    FoodCollected: LongWord;
-    WoodCollected: LongWord;
-    StoneCollected: LongWord;
-    GoldCollected: LongWord;
+    FoodCollected: Cardinal;
+    WoodCollected: Cardinal;
+    StoneCollected: Cardinal;
+    GoldCollected: Cardinal;
     TributeSent: Word;
     TributeRcvd: Word;
     TradeProfit: Word;
@@ -89,9 +89,9 @@ type
   TTechnologyStats = class(TObject)
   public
     TechnologyScore: Word;
-    FeudalAge: LongWord;
-    CastleAge: LongWord;
-    ImperialAge: LongWord;
+    FeudalAge: Cardinal;
+    CastleAge: Cardinal;
+    ImperialAge: Cardinal;
     MapExplored: Byte;
     ResearchCount: Byte;
     ResearchPercent: Byte;
@@ -115,7 +115,7 @@ type
     Victory: Boolean;
     Medal: Boolean;
     Result: TGameResult;
-    TotalScore: LongWord;
+    TotalScore: Cardinal;
     MilitaryStats: TMilitaryStats;
     EconomyStats: TEconomyStats;
     TechnologyStats: TTechnologyStats;
@@ -135,7 +135,7 @@ type
     Team: Integer;
     Owner: Boolean;
     CivId: TCivilization;
-    Color: Byte;
+    Color: TPlayerColor;
     IsCooping: Boolean;
     FeudalTime: Integer;
     CastleTime: Integer;
@@ -249,7 +249,7 @@ type
     InGameCoop: Boolean;
     IsFFA: Boolean;
     Owner: TPlayer;
-    ScFileName: AnsiString;
+    ScenarioFileName: AnsiString;
     GameVersion: TGameVersion;
     Victory: TVictory;
     GameMode: TGameMode;
@@ -339,7 +339,7 @@ type
   { TChatMessage }
   TChatMessage = class(TObject)
     Time: Integer;
-    Color: Byte;
+    Color: TPlayerColor;
     Msg: AnsiString;
     constructor Create();
   end;
@@ -374,7 +374,7 @@ type
     fMapData: array of array of Integer;
     fMapWidth: Longint;
     fMapHeight: Longint;
-    fAnalyzeTime: LongWord;
+    fAnalyzeTime: Cardinal;
 
     GaiaObjects: TObjectList;
     PlayerObjects: TObjectList;
@@ -417,7 +417,7 @@ type
     {$IFDEF EXTENDED}CommentString: AnsiString;{$ENDIF}
     constructor Create();
     destructor Destroy(); override;
-    class function GameTimeToString(Time: Integer): AnsiString;
+    class function GameTimeToString(Time: Cardinal): AnsiString;
     procedure Analyze();
     function GenerateMap(const Width: Integer; const Height: Integer): TMemoryStream;
     {$IFDEF EXTENDED}
@@ -426,7 +426,7 @@ type
     {$ENDIF}
     class function ErrorCodeToString(const ErrorCode: Integer): String;
     property FileName: String read fFileName write fFileName;
-    property AnalyzeTime: LongWord read fAnalyzeTime;
+    property AnalyzeTime: Cardinal read fAnalyzeTime;
     property Analyzed: Boolean read fAnalyzed;
     {$IFDEF EXTENDED}
     property KeepStreams: Boolean read fKeepStreams write fKeepStreams;
@@ -636,7 +636,7 @@ constructor TChatMessage.Create();
 begin
   inherited Create();
   Time := 0;
-  Color := 0;
+  Color := pclUndefined;
   Msg := '';
 end;
 
@@ -748,7 +748,7 @@ begin
   Team := -1;
   Owner := False;
   CivId := cNone;
-  Color := 0;
+  Color := pclUndefined;
   IsCooping := False;
   FeudalTime := 0;
   CastleTime := 0;
@@ -984,7 +984,7 @@ begin
   InGameCoop := False;
   IsFFA := False;
   Owner := nil;
-  ScFileName := '';
+  ScenarioFileName := '';
   sGameSubVersion := '';
   Victory.Clear();
 end;
@@ -1134,11 +1134,10 @@ begin
   fAnalyzed := False;
 end;
 
-class function TRecAnalyst.GameTimeToString(Time: Integer): AnsiString;
+class function TRecAnalyst.GameTimeToString(Time: Cardinal): AnsiString;
 var
-  Hours, Minutes, Seconds: Integer;
+  Hours, Minutes, Seconds: Cardinal;
 begin
-  if (Time < 0) then Time := 0;
   Hours   := Time div 1000 div 3600;
   Minutes := Time div 1000 div 60 mod 60;
   Seconds := Time div 1000 mod 60;
@@ -1606,7 +1605,7 @@ begin
       ReadString(buff65536, 2);
       if (buff65536[0] <> #0) then
       begin
-        GameSettings.ScFileName := buff65536;
+        GameSettings.ScenarioFileName := buff65536;
         if fIsMgl then
           GameSettings.GameType := gtScenario; { this way we detect scenarios in mgl, is there any other way? }
       end;
@@ -1784,7 +1783,7 @@ end;
 
 procedure TRecAnalyst.Analyze();
 var
-  StartTime: LongWord;
+  StartTime: Cardinal;
 begin
   try
     Reset();
@@ -1983,10 +1982,7 @@ begin
         if Player.IsCooping then Continue;
         with Player.InitialState do
         begin
-          if (Player.Color - 1 in [Low(PLAYER_COLORS)..High(PLAYER_COLORS)]) then
-            PlayerColor := PLAYER_COLORS[Player.Color - 1]
-          else
-            PlayerColor := 0; { black }
+          PlayerColor := PLAYER_COLORS[Player.Color];
           PlayerPen := TGPPen.Create(ColorRefToARGB(PlayerColor));
           PlayerBrush := TGPSolidBrush.Create(ColorRefToARGB(PlayerColor));
           try
@@ -2011,10 +2007,7 @@ begin
       UO := PlayerObjects[i] as TUnitObject;
       if not Assigned(UO.Owner) then
         Continue;
-      if (UO.Owner.Color - 1 in [Low(PLAYER_COLORS)..High(PLAYER_COLORS)]) then
-        PlayerColor := PLAYER_COLORS[UO.Owner.Color - 1]
-      else
-        PlayerColor := 0; { black }
+      PlayerColor := PLAYER_COLORS[UO.Owner.Color];
       PlayerBrush := TGPSolidBrush.Create(ColorRefToARGB(PlayerColor));
       try
         Graphics.FillRectangle(PlayerBrush, MakeRect(Rect(UO.Position.X - 1,
@@ -2244,11 +2237,11 @@ begin
   for i := 0 to PreGameChatMessages.Count - 1 do
   begin
     ChatMessage := PreGameChatMessages[i] as TChatMessage;
-    Player := Players.GetPlayerByIndex(ChatMessage.Color);
+    Player := Players.GetPlayerByIndex(Ord(ChatMessage.Color));
     if Assigned(Player) then
       ChatMessage.Color := Player.Color
     else
-      ChatMessage.Color := 0;
+      ChatMessage.Color := pclUndefined;
   end;
 end;
 {$IFDEF EXTENDED}
@@ -2444,7 +2437,7 @@ begin
           with Player do
           begin
             CivId := TCivilization(civilization);
-            Color := player_color + 1;
+            Color := TPlayerColor(player_color + 1);
             InitialState.Position.X := Round(init_camera_pos_x);
             InitialState.Position.Y := Round(init_camera_pos_y);
             InitialState.Food := Round(food);
@@ -2725,7 +2718,7 @@ begin
       with Player do
       begin
         CivId := TCivilization(civilization);
-        Color := player_color + 1;
+        Color := TPlayerColor(player_color + 1);
         InitialState.Position.X := Round(init_camera_pos_x);
         InitialState.Position.Y := Round(init_camera_pos_y);
         InitialState.Food := Round(food);
@@ -2774,7 +2767,7 @@ begin
     // buff65536[2] is not really player index
     // TODO may be wrong if someone enters/leaves game, or coop, no workaround
     // exists, as players may have same names
-    ChatMessage.Color := StrToIntDef(String(buff[2]), 0);
+    ChatMessage.Color := TPlayerColor(Ord(StrToIntDef(String(buff[2]), 0)));
     {Player := Players.GetPlayerByIndex(StrToIntDef(String(buff[2]), 0));
     if Assigned(Player) then
       ChatMessage.ColorId := Player.Index;}
