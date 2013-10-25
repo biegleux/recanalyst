@@ -85,6 +85,8 @@ type
   TVictoryCondition = (vcStandard, vcConquest, vcTimeLimit, vcScoreLimit, vcCustom);
   TGameMode = (gmSinglePlayer, gmMultiPlayer);
   TGameResult = (grLoss, grWin, grSurvivalToFinish, grDisconnect);
+  TPlayerColor = (pclUndefined, pclBlue, pclRed, pclGreen, pclYellow, pclTeal,
+    pclPurple, pclGrey, pclOrange);
 
   {$I id_maps.inc}
   {$I id_researches.inc}
@@ -203,7 +205,8 @@ const
     'Magyars',
     'Slavs');
 
-  PLAYER_COLORS: array[0..7] of Cardinal = (
+  PLAYER_COLORS: array[TPlayerColor] of Cardinal = (
+    $00000000,
     $00ff0000,
     $000000ff,
     $0000ff00,

@@ -141,7 +141,7 @@ type
     bOwner: BOOL;
     szCivilization: array[0..MAXBYTE] of AnsiChar;
     dwCivId: DWORD;
-    byColor: BYTE;
+    dwColor: DWORD;
     bIsCooping: BOOL;
     dwFeudalTime: DWORD;
     dwCastleTime: DWORD;
@@ -212,9 +212,9 @@ type
   { This structure contains information about a chat message. }
   PChatMessageStruct = ^TChatMessageStruct;
   TChatMessageStruct = record
-    dwTime: DWORD;  // always zero for pre-game chat messages
-    byColor: BYTE;  // zero for players who left the game before its start in pre-game chat,
-                    // zero for age advances, resign and disconnect messages in in-game chat
+    dwTime: DWORD;   // always zero for pre-game chat messages
+    dwColor: DWORD;  // zero for players who left the game before its start in pre-game chat,
+                     // zero for age advances, resign and disconnect messages in in-game chat
     szMessage: array[0..MAXBYTE] of AnsiChar;
   end;
 
@@ -631,7 +631,7 @@ begin
       CpyMem(szRevealMap, sRevealMap);
       CpyMem(szMapSize, sMapSize);
       CpyMem(szVersion, sGameVersion);
-      CpyMem(szScFileName, ScFileName);
+      CpyMem(szScFileName, ScenarioFileName);
       CpyMem(szSubVersion, sGameSubVersion);
       if Assigned(lpVictory) then
       begin
@@ -825,7 +825,7 @@ begin
         bOwner := Owner;
         dwCivId := Ord(CivId);
         CpyMem(szCivilization, Civ);
-        byColor := Color;
+        dwColor := Ord(Color);
         bIsCooping := IsCooping;
         dwFeudalTime := FeudalTime;
         dwCastleTime := CastleTime;
@@ -875,7 +875,7 @@ begin
       with ChatMessage do
       begin
         dwTime := M.Time;
-        byColor := M.Color;
+        dwColor := Ord(M.Color);
         CpyMem(szMessage, M.Msg);
       end;
       if not lpEnumFunc(@ChatMessage, lParam) then Break;
@@ -918,7 +918,7 @@ begin
       with ChatMessage do
       begin
         dwTime := M.Time;
-        byColor := M.Color;
+        dwColor := Ord(M.Color);
         CpyMem(szMessage, M.Msg);
       end;
       if not lpEnumFunc(@ChatMessage, lParam) then Break;
