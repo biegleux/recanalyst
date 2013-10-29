@@ -224,7 +224,7 @@ type
     dwTime: DWORD;
     dwPlayerFrom: DWORD;
     dwPlayerTo: DWORD;
-    byResourceId: BYTE;
+    byResource: BYTE;
     dwAmount: DWORD;
     fFee: Single;
   end;
@@ -963,7 +963,7 @@ begin
         dwTime := T.Time;
         dwPlayerFrom := T.PlayerFrom.Index;
         dwPlayerTo := T.PlayerTo.Index;
-        byResourceId := Ord(T.Resource);
+        byResource := Ord(T.Resource);
         dwAmount := T.Amount;
         fFee := T.Fee;
       end;
