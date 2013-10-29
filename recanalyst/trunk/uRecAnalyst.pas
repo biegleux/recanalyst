@@ -140,8 +140,8 @@ type
     FeudalTime: Integer;
     CastleTime: Integer;
     ImperialTime: Integer;
-    ResignTime: Integer;
-    DisconnectTime: Integer;
+    ResignTime: Cardinal;
+    DisconnectTime: Cardinal;
     Buildings: TBuildingList;
     InitialState: TInitialState;
     Achievement: TAchievement;
@@ -294,7 +294,7 @@ type
     Time: Integer;
     PlayerFrom: TPlayer;
     PlayerTo: TPlayer;
-    ResourceId: TResourceId;
+    Resource: TResource;
     Amount: Integer;
     Fee: Single;
     function GetResourceName(): AnsiString;
@@ -537,7 +537,7 @@ end;
 { TTribute }
 function TTribute.GetResourceName(): AnsiString;
 begin
-  Result := RESOURCES[ResourceId];
+  Result := RESOURCES[Resource];
 end;
 
 { TTrainedUnit }
@@ -2958,7 +2958,7 @@ begin
     Tribute.Time       := time_cnt;
     Tribute.PlayerFrom := PlayerFrom;
     Tribute.PlayerTo   := PlayerTo;
-    Tribute.ResourceId := TResourceId(tribute_cmd.resource_id);
+    Tribute.Resource   := TResource(tribute_cmd.resource_id);
     Tribute.Amount     := Floor(tribute_cmd.amount_tributed);
     Tribute.Fee        := tribute_cmd.market_fee;
     Tributes.Add(Tribute);

@@ -963,7 +963,7 @@ begin
         dwTime := T.Time;
         dwPlayerFrom := T.PlayerFrom.Index;
         dwPlayerTo := T.PlayerTo.Index;
-        byResourceId := Ord(T.ResourceId);
+        byResourceId := Ord(T.Resource);
         dwAmount := T.Amount;
         fFee := T.Fee;
       end;
