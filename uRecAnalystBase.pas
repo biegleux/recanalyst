@@ -79,7 +79,7 @@ type
   TCivilization = (cNone, cBritons, cFranks, cGoths, cTeutons, cJapanese, cChinese,
     cByzantines, cPersians, cSaracens, cTurks, cVikings, cMongols, cCelts, cSpanish,
     cAztecs, cMayans, cHuns, cKoreans, cItalians, cIndians, cIncas, cMagyars, cSlavs);
-  TResourceId = (rFood, rWood, rStone, rGold);
+  TResource = (rFood, rWood, rStone, rGold);
   TStartingAge = (saDarkAge = 0, saFeudalAge = 1, saCastleAge = 2, saImperialAge = 3,
     saPostImperialAge = 4);
   TVictoryCondition = (vcStandard, vcConquest, vcTimeLimit, vcScoreLimit, vcCustom);
@@ -267,7 +267,7 @@ const
   RELIC_COLOR = $ffffff;
   FOOD_COLOR  = $6cc4a5;
 
-  RESOURCES: array[TResourceId] of AnsiString = (
+  RESOURCES: array[TResource] of AnsiString = (
     'Food', 'Wood', 'Stone', 'Gold'
   );
 
