@@ -67,15 +67,15 @@ type
   TBuildingRec = TResearchRec;
 
   TGameVersion = (gvUnknown, gvAOK, gvAOKTrial, gvAOK20, gvAOK20a, gvAOC,
-    gvAOCTrial, gvAOC10, gvAOC10c, gvAOE2HD, gvAOFE21, gvAOFE22, gvAOCUP11,
-    gvAOCUP12, gvAOCUP13, gvAOCUP14);
+    gvAOCTrial, gvAOC10, gvAOC10c, gvAOE2HD, gvAOE2HDTF, gvAOFE21, gvAOFE22,
+    gvAOCUP11, gvAOCUP12, gvAOCUP13, gvAOCUP14);
   TMapStyle = (msStandard, msRealWorld, msCustom);
   TDifficultyLevel = (dlHardest, dlHard, dlModerate, dlStandard {dlEasy}, dlEasiest);
   TGameType = (gtRandomMap, gtRegicide, gtDeathMatch, gtScenario, gtCampaign,
-    gtKingOfTheHill, gtWonderRace, gtDefendWonder, gtTurboRandomMap);
+    gtKingOfTheHill, gtWonderRace, gtDefendWonder, gtTurboRandomMap, gtCaptureTheRelic);
   TGameSpeed = (gsSlow = 100, gsNormal = 150, gsFast = 200);
   TRevealMap = (rmNormal, rmExplored, rmAllVisible);
-  TMapSize = (msTiny, msSmall, msMedium, msNormal, msLarge, msGiant);
+  TMapSize = (msTiny, msSmall, msMedium, msNormal, msLarge, msGiant, msLudiKRIS);
   TCivilization = (cNone, cBritons, cFranks, cGoths, cTeutons, cJapanese, cChinese,
     cByzantines, cPersians, cSaracens, cTurks, cVikings, cMongols, cCelts, cSpanish,
     cAztecs, cMayans, cHuns, cKoreans, cItalians, cIndians, cIncas, cMagyars, cSlavs);
@@ -87,6 +87,10 @@ type
   TGameResult = (grLoss, grWin, grSurvivalToFinish, grDisconnect);
   TPlayerColor = (pclUndefined, pclBlue, pclRed, pclGreen, pclYellow, pclTeal,
     pclPurple, pclGrey, pclOrange);
+  TGameLanguage = (glUndefined, glEnglish, glKorean, glSpanish, glFrench, glGerman,
+    glItalian, glTraditionalChinese, glJapanese, glSimplifiedChinese, glRussian,
+    glTurkish, glPolish, glGreek, glPortuguese, glCzech, glHungarian, glBulgarian,
+    glSlovak); 
 
   {$I id_maps.inc}
   {$I id_researches.inc}
@@ -96,16 +100,25 @@ type
 
 const
   { version strings }
-  VER_94 = 'VER 9.4';
-  VER_93 = 'VER 9.3';
-  TRL_93 = 'TRL 9.3';
-  VER_95 = 'VER 9.5';
-  VER_98 = 'VER 9.8';
-  VER_99 = 'VER 9.9';
-  VER_9A = 'VER 9.A';
-  VER_9B = 'VER 9.B';
+  VER_93 = 'VER 9.3'; // AOK
+  VER_94 = 'VER 9.4'; // AOC
+  TRL_93 = 'TRL 9.3'; // TRIAL
+  VER_95 = 'VER 9.5'; // AOFE 2.1
+  VER_98 = 'VER 9.8'; // AOC UP 1.2
+  VER_99 = 'VER 9.9'; // AOC UP 1.3
+  VER_9A = 'VER 9.A'; // AOC UP 1.4 RC1
+  VER_9B = 'VER 9.B'; // AOC UP 1.4 RC2
 
-  MAPS_NUM = 37;
+  { subversion numbers }
+  sv1150: Double = 11.50; // AOK
+  sv1176: Double = 11.76; // AOC
+  sv1180: Double = 11.80; // 2.0
+  sv1190: Double = 11.90; // 2.3
+  sv1191: Double = 11.91; // 2.5, 2.6
+  sv1193: Double = 11.93; // 2.8
+  sv1196: Double = 11.96; // 3.0
+
+  MAPS_NUM = 37 + 12;
   MAPS: array[0..MAPS_NUM - 1] of TMapRec = (
     (Id: miArabia;         Name: 'Arabia'),
     (Id: miArchipelago;    Name: 'Archipelago'),
@@ -143,12 +156,25 @@ const
     (Id: miSeaOfJapan;     Name: 'Sea of Japan (East Sea)'),
     (Id: miByzantinum;     Name: 'Byzantinum'),
     (Id: miCustom;         Name: 'Custom'),
-    (Id: miBlindRandom;    Name: 'Blind Random'));
+    (Id: miBlindRandom;    Name: 'Blind Random'),
+    // AOE2HD: TF
+    (Id: miAcropolis;      Name: 'Acropolis'),
+    (Id: miBudapest;       Name: 'Budapest'),
+    (Id: miCenotes;        Name: 'Cenotes'),
+    (Id: miCityOfLakes;    Name: 'City of Lakes'),
+    (Id: miGoldenPit;      Name: 'Golden Pit'),
+    (Id: miHideout;        Name: 'Hideout'),
+    (Id: miHillFort;       Name: 'Hill Fort'),
+    (Id: miLombardia;      Name: 'Lombardia'),
+    (Id: miSteppe;         Name: 'Steppe'),
+    (Id: miValley;         Name: 'Valley'),
+    (Id: miMegaRandom;     Name: 'MegaRandom'),
+    (Id: miHamburger;      Name: 'Hamburger'));
 
   GAME_VERSIONS: array[TGameVersion] of AnsiString = (
     'Unknown', 'AOK', 'AOK Trial', 'AOK 2.0', 'AOK 2.0a', 'AOC', 'AOC Trial',
-    'AOC 1.0', 'AOC 1.0c', 'AOE2 HD', 'AOFE 2.1', 'AOFE 2.2', 'AOC UP 1.1', 'AOC UP 1.2',
-    'AOC UP 1.3', 'AOC UP 1.4');
+    'AOC 1.0', 'AOC 1.0c', 'AOE2 HD', 'AOE2 HD: TF', 'AOFE 2.1', 'AOFE 2.2',
+    'AOC UP 1.1', 'AOC UP 1.2', 'AOC UP 1.3', 'AOC UP 1.4');
 
   MAP_STYLES: array[TMapStyle] of AnsiString = (
     'Standard', 'Real World', 'Custom');
@@ -161,7 +187,8 @@ const
 
   GAME_TYPES: array[TGameType] of AnsiString = (
     'Random Map', 'Regicide', 'Death Match', 'Scenario', 'Campaign',
-    'King of the Hill', 'Wonder Race', 'Defend the Wonder', 'Turbo Random Map');
+    'King of the Hill', 'Wonder Race', 'Defend the Wonder', 'Turbo Random Map',
+    'Capture the Relic');
 
   GAME_SPEEDS: array[0..2] of AnsiString = (
     'Slow', 'Normal', 'Fast');
@@ -171,7 +198,7 @@ const
 
   MAP_SIZES: array[TMapSize] of AnsiString = (
     'Tiny (2 players)', 'Small (3 players)', 'Medium (4 players)',
-    'Normal (6 players)', 'Large (8 players)', 'Giant');
+    'Normal (6 players)', 'Large (8 players)', 'Giant', 'LudiKRIS');
 
   STARTING_AGES: array[TStartingAge] of AnsiString = (
     'Dark Age', 'Feudal Age', 'Castle Age', 'Imperial Age', 'Post-Imperial Age');
@@ -638,7 +665,8 @@ const
      'Migration', 'Rivers', 'Team Islands', 'Random', 'Scandinavia', 'Mongolia',
      'Yucatan', 'Salt Marsh', 'Arena', 'King of the Hill', 'Oasis', 'Ghost Lake',
      'Nomad', 'Iberia', 'Britain', 'Mideast', 'Texas', 'Italy', 'Central America',
-     'France', 'Norse Lands', 'Sea of Japan (East Sea)', 'Byzantinum', 'Custom', 'Blind Random'),
+     'France', 'Norse Lands', 'Sea of Japan (East Sea)', 'Byzantinum', 'Custom', 'Blind Random',
+     '', '', '', '', '', '', '', '', '', '', '', ''),
 
     // spanish (european) provided by dauro ibero
     ('Arabia', 'ArchipiÈlago', 'B·ltico', 'Selva negra', 'Costa', 'Continental',
@@ -646,7 +674,8 @@ const
      'MigraciÛn', 'RÌos', 'Islas de equipo', 'Aleatorio', 'Escandinavia', 'Mongolia',
      'Yucat·n', 'Marisma', 'Arena', 'Rey de la colina', 'Oasis', 'Lago fantasma',
      'NÛmada', 'Iberia', 'Inglaterra', 'Oriente Medio', 'Texas', 'Italia', 'AmÈrica Central',
-     'Francia', 'Tierras NÛrdicas', 'Mar del JapÛn', 'Bizancio', 'Personalizado', 'Aleatorio a ciegas'),
+     'Francia', 'Tierras NÛrdicas', 'Mar del JapÛn', 'Bizancio', 'Personalizado', 'Aleatorio a ciegas',
+     '', '', '', '', '', '', '', '', '', '', '', ''),
 
     // czech from aoe.cz (missing Blind Random)
     ('Arabie', 'Clenity Teren', 'Primori', 'Cerny Les', 'Pobrezi', 'Kontinent',
@@ -654,7 +683,8 @@ const
      'Stehovani', 'Reky', 'Spojene Ostrovy', 'Nahodne', 'Scandinavie', 'Mongolsko',
      'Yucatan', 'Salt Marsh', 'Arena', 'Kr·l Vrchu', 'Oasa', 'Jezero duchu',
      'KoËovnÌk', 'Iberia', 'Anglie', 'Mideast', 'Texas', 'Italie', 'St¯ednÌ Amerika',
-     'Francie', 'SeverskÈ zemÏ', 'JaponskÈ mo¯e (V˝chodnÌ mo¯e)', 'Byzantium', 'Voliteln˝', ''),
+     'Francie', 'SeverskÈ zemÏ', 'JaponskÈ mo¯e (V˝chodnÌ mo¯e)', 'Byzantium', 'Voliteln˝', '',
+     '', '', '', '', '', '', '', '', '', '', '', ''),
 
     // polish from empires2.net (missing Blind Random)
     ('Pustynia', 'Archipelag', 'Ba≥tyk', 'Czarny las', 'Wybrzeøe', 'Kontynent',
@@ -662,7 +692,8 @@ const
      'Migracja', 'Rzeki', 'Wielkie wyspy', 'Losowa', 'Skandynawia', 'Mongolia',
      'Jukatan', 'S≥one bagna', 'Arena', 'KrÛl GÛry', 'Oaza', 'Jezioro z widmami',
      'Koczownik', 'Iberia', 'Brytania', 'Bliski WschÛd', 'Teksas', 'W≥ochy', 'årodkowa Ameryka',
-     'Francja', 'Ziemie PÛ≥nocne', 'Morze JapoÒskie (Morze Wschodnie)', 'Bizancjum', 'W≥asny', ''),
+     'Francja', 'Ziemie PÛ≥nocne', 'Morze JapoÒskie (Morze Wschodnie)', 'Bizancjum', 'W≥asny', '',
+     '', '', '', '', '', '', '', '', '', '', '', ''),
 
     // slovak from slovenciny.com provided by Maximus
     ('Ar·bia', 'S˙ostrovie', 'More', 'Temn˝ les', 'Pobreûie', 'Kontinent',
@@ -670,7 +701,8 @@ const
      'Sùahovanie', 'Rieky', 'SpojeneckÈ ostrovy', 'N·hodn·', 'äkandin·via', 'Mongolsko',
      'Yucatan', 'Solisko', 'ArÈna', 'Kr·æ vrchu', 'O·za', 'Jazero duchov',
      'KoËovanie', 'Pyreneje', 'Brit·nia', 'Stredn˝ v˝chod', 'Texas', 'Taliansko', 'Stredn· Amerika',
-     'Franc˙zsko', 'äkandin·via', 'JaponskÈ more', 'Byzancia', 'Voliteæn˝', '⁄plne n·hodn·')
+     'Franc˙zsko', 'äkandin·via', 'JaponskÈ more', 'Byzancia', 'Voliteæn˝', '⁄plne n·hodn·',
+     '', '', '', '', '', '', '', '', '', '', '', '')
     );
 
 implementation

@@ -58,6 +58,19 @@ const
   miByzantinum     = 43;
   miCustom         = 44;
   miBlindRandom    = 48;
+  // AOE2HD: TF
+  miAcropolis      = 50;
+  miBudapest       = 51;
+  miCenotes        = 52;
+  miCityOfLakes	   = 53;
+  miGoldenPit      = 54;
+  miHideout        = 55;
+  miHillFort       = 56;
+  miLombardia      = 57;
+  miSteppe         = 58;
+  miValley         = 59;
+  miMegaRandom     = 60;
+  miHamburger      = 61;
 
   miRealWorldMaps: set of Byte = [miIberia..miByzantinum];
 
