@@ -255,6 +255,7 @@ type
     GameMode: TGameMode;
     Extra: TExtraGameData;
     sGameSubVersion: AnsiString;
+    Language: TGameLanguage;
     constructor Create();
     destructor Destroy(); override;
     procedure Clear();
@@ -369,6 +370,7 @@ type
     fIsMgx: Boolean;
     fIsMgz: Boolean;
     fIsUserPatch: Boolean;
+    fSubVersion: Double;
     fHeaderStream: TMemStream;
     fBodyStream: TMemStream;
     fMapData: array of array of Integer;
@@ -986,6 +988,7 @@ begin
   Owner := nil;
   ScenarioFileName := '';
   sGameSubVersion := '';
+  Language := glUndefined;
   Victory.Clear();
 end;
 
@@ -1152,6 +1155,7 @@ const
   MGL_EXT = '.mgl';
   MGX_EXT = '.mgx';
   MGZ_EXT = '.mgz';
+  MGX2_EXT = '.mgx2';
   NO_HEADER = -15; // raw inflate
 begin
   if (fFileName = '') then
@@ -1164,7 +1168,9 @@ begin
   else if (LowerCase(ExtractFileExt(fFilename)) = MGZ_EXT) then
   begin
     fIsMgx := True; fIsMgz := True;
-  end else
+  end else if (LowerCase(ExtractFileExt(fFilename)) = MGX2_EXT) then
+    fIsMgx := True
+  else
     raise ERecAnalystException.Create(RECANALYST_FILEEXT);
 
   ms := TMemoryStream.Create();
@@ -1228,7 +1234,6 @@ const
   separator: array[0..3] of AnsiChar = (#$9D, #$FF, #$FF, #$FF);
   scenario_constant: array[0..3] of AnsiChar = (#$F6, #$28, #$9C, #$3F);
   aok_separator: array[0..3] of AnsiChar = (#$9A, #$99, #$99, #$3F);
-  aoc_subversion: Double = 11.76;
 var
   buff: array[0..7] of Byte;
   version: array[0..7] of AnsiChar;
@@ -1264,13 +1269,7 @@ var
   time_limit: Single;
   num_data, num_couples, map_size_x2, map_size_y2, num_unknown_data2: Int32;
   subversion: Single;
-  rounded_subversion: Double;
   game_mode: Word;
-const
-  sv1180: Double = 11.80;
-  sv1190: Double = 11.90;
-  sv1191: Double = 11.91;
-  sv1193: Double = 11.93;
 begin
   FillChar(buff, SizeOf(buff), 0);
   FillChar(buff256, SizeOf(buff256), #0);
@@ -1281,13 +1280,12 @@ begin
     FillChar(version, SizeOf(version), #0);
     ReadBuffer(version, SizeOf(version));
     ReadFloat(subversion);
-    rounded_subversion := RoundTo(subversion, -2);
-    // AOE2HD: 2.0 = 11.80, 2.3 = 11.90, 2.5 = 11.91, 2.6 = 11.91, 2.8 = 11.93
+    fSubVersion := RoundTo(subversion, -2);
     if (version = VER_94) then
     begin
       if fIsMgz then
         GameSettings.GameVersion := gvAOCUP11
-      else if (rounded_subversion > aoc_subversion) then
+      else if (fSubVersion > sv1176) then
         GameSettings.GameVersion := gvAOE2HD
       else
         GameSettings.GameVersion := gvAOC;
@@ -1328,14 +1326,16 @@ begin
 
     if (GameSettings.GameVersion = gvAOE2HD) then
     begin
-      if (rounded_subversion = sv1180) then
+      if (fSubVersion = sv1180) then
         GameSettings.sGameSubversion := '2.0'
-      else if (rounded_subversion = sv1190) then
+      else if (fSubVersion = sv1190) then
         GameSettings.sGameSubversion := '2.3'
-      else if (rounded_subversion = sv1191) then
+      else if (fSubVersion = sv1191) then
         GameSettings.sGameSubversion := '2.6' { or 2.5, using higher one }
-      else if (rounded_subversion = sv1193) then
+      else if (fSubVersion = sv1193) then
         GameSettings.sGameSubversion := '2.8'
+      else if (fSubVersion = sv1196) then
+        GameSettings.sGameSubversion := '3.0'
     end else if (GameSettings.GameVersion = gvAOCUP14) then
     begin
       if (version = VER_9A) then
@@ -1488,6 +1488,7 @@ begin
         GameType := TGameType(game_type);
       end;
     end;
+    SeekIf(fSubVersion >= sv1196, 1); // always 0? TODO: NIECO TU JE! all techs to nie je
     { here comes pre-game chat (mgl doesn't contain this information }
     if fIsMgx then
     begin
@@ -1510,7 +1511,7 @@ begin
       begin
         ReadInt32(string_length);
         Seek(string_length);
-      end;
+      end; // potialto to je ok
       Seek(6);
       for i := 0 to 7 do
       begin
@@ -1519,6 +1520,7 @@ begin
         Seek(4 + 400 * num_rule);
       end;
       Seek(5544);
+      SeekIf(fSubVersion >= sv1196, 1280); // TODO more testing
     end;
     { getting data }
     Seek(4);
@@ -1526,7 +1528,6 @@ begin
     Seek(37);
     ReadWord(rec_player_ref);
     ReadChar(num_player);
-    Dec(num_player);
     if fIsMgx then Seek(2);
     ReadWord(game_mode);
 
@@ -1547,13 +1548,10 @@ begin
         POVEx := Player.Name;
       end;
     end;
-    GameSettings.InGameCoop := (num_player < Players.Count);
-
-    Inc(num_player);
+    GameSettings.InGameCoop := (num_player - 1 < Players.Count);
 
     { getting map }
     Seek(58);
-    SeekIf(fIsMgl, -2);
     ReadInt32(map_size_x);
     ReadInt32(map_size_y);
     fMapWidth := map_size_x;
@@ -1563,10 +1561,12 @@ begin
     { unknown data }
     for i := 0 to num_unknown_data - 1 do
     begin
-      Seek(1275 + map_size_x * map_size_y);
-      ReadInt32(num_float);
+      SeekIfElse(fSubVersion >= sv1193, 2048 + map_size_x * map_size_y * 2, 1275 + map_size_x * map_size_y);
+      ReadInt32(num_float); // always 41?
       Seek((num_float * 4) + 4);
     end;
+    // AOE2HD & TF: Seek(num_unknown_data * (2219 + 2 * map_size_x * map_size_y));
+    // inak: Seek(num_unknown_data * (x + map_size_x * map_size_y));
     Seek(2);
 
     SetLength(fMapData, map_size_x, map_size_y);
@@ -1593,7 +1593,7 @@ begin
     ReadInt32(num_unknown_data2);
     Seek(27 * num_unknown_data2 + 4);
     { getting Player_info }
-    if (GameSettings.GameVersion <> gvAOE2HD) then
+    if not (GameSettings.GameVersion in [gvAOE2HD, gvAOE2HDTF]) then
       ReadPlayerInfoBlockEx(num_player)
     else
       ReadPlayerInfoBlock(num_player);
@@ -2360,6 +2360,7 @@ const
     #$00, #$0B, #$00, #$02, #$00, #$00, #$00, #$02, #$00, #$00, #$00, #$0B);
   objects_mid_separator_gaia: array[0..9] of AnsiChar = (
     #$00, #$0B, #$00, #$40, #$00, #$00, #$00, #$20, #$00, #$00);
+//  aoc_num_research = 460;
   aofe_num_research = 555;
 var
   i: Integer;
@@ -2470,6 +2471,7 @@ begin
           Seek(11);
           SeekIfElse(fIsMgx, 4182, 3578);
           SeekIf(fIsUserPatch, 8176);
+          SeekIf(fSubVersion >= sv1196, 200);
           Seek(4);
           ReadWord(num_research);
           if (fIsUserPatch) then
@@ -2478,6 +2480,14 @@ begin
             begin
               if (GameSettings.GameVersion = gvAOCUP12) then
                 GameSettings.GameVersion := gvAOFE22;  // AOFE 2.2 is using UP 1.2
+            end;
+          end;
+          if (fSubVersion >= sv1196) then
+          begin
+            if (num_research = aofe_num_research) then
+            begin
+              if (GameSettings.GameVersion = gvAOE2HD) then
+                GameSettings.GameVersion := gvAOE2HDTF;
             end;
           end;
           SeekIfElse(fIsMgx, -4182, -3578);
@@ -2646,6 +2656,8 @@ procedure TRecAnalyst.ReadPlayerInfoBlock(const num_player: Byte);
 const
   player_info_end_separator: array[0..11] of AnsiChar = (
     #$00, #$0B, #$00, #$02, #$00, #$00, #$00, #$02, #$00, #$00, #$00, #$0B);
+//  aoc_num_research = 460;
+  aofe_num_research = 555;
 var
   map_size_x, map_size_y: Int32;
   i: Integer;
@@ -2653,16 +2665,41 @@ var
   food, wood, stone, gold, headroom, population, civilian_pop, military_pop, data6: Single;
   init_camera_pos_x, init_camera_pos_y: Single;
   civilization, player_color: Byte;
+  player_name_len, num_research: Word;
+  num_resources, num_last_locations: Int32;
 begin
   map_size_x := fMapWidth;
   map_size_y := fMapHeight;
   with fHeaderStream do
   begin
-    { first is GAIA, skip some useless bytes }
+    { first is GAIA }
     if (GameSettings.GameVersion = gvAOKTrial)
       or (GameSettings.GameVersion = gvAOCTrial) then Seek(4);
-    Seek(num_player + 70);  // + 2 len of playerlen
-    SeekIfElse(fIsMgx, 792, 756);
+    Seek(num_player + 43);
+    ReadWord(player_name_len);
+    Seek(player_name_len + 1);
+    ReadInt32(num_resources);
+    Seek(1 + 4 * num_resources + 9);
+    if fIsMgx then
+    begin
+      ReadInt32(num_last_locations);
+      SeekIf(num_last_locations > 0, 8 * num_last_locations);
+    end;
+    Seek(11);
+    SeekIfElse(fIsMgx, 4182, 3578);
+    SeekIf(fSubVersion >= sv1196, 200);
+    Seek(4);
+    ReadWord(num_research);
+    if (fSubVersion >= sv1196) then
+    begin
+      if (num_research = aofe_num_research) then
+      begin
+        if (GameSettings.GameVersion = gvAOE2HD) then
+          GameSettings.GameVersion := gvAOE2HDTF;
+      end;
+    end;
+    SeekIfElse(fIsMgx, -4182, -3578);
+
     SeekIfElse(fIsMgx, 41249, 34277);
     Seek(map_size_x * map_size_y);
     // Explored GAIA Objects
